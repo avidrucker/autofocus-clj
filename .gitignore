@@ -1,0 +1,6 @@
+*~undo-tree~
+.nrepl-port
+.cpcache/
+*.*~
+.clj-kondo
+.lsp/*

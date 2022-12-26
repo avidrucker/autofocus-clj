@@ -1,0 +1,91 @@
+* Current Issues To Resolve
+
+** DONE Convert list API primary data structure to vector
+since reads are done very often, if as needed, later lists can be used
+for performance increases as needed for adding of new items
+[IN-PROGRESS] 
+
+Rationale: "Vectors have O(1) random access times, but they have to be
+pre-allocated. Lists can be dynamically extended, but accessing a
+random element is O(n)." ~ SO user Svante Source:
+https://stackoverflow.com/questions/1147975/in-clojure-when-should-i-use-a-vector-over-a-list-and-the-other-way-around 
+
+Note: Rendering vectors into Hiccup may require conversion into lists,
+or it just may be easier on my brain... 
+
+*** TODO Confirm whether this is a requirement, a good idea, or neither.
+
+
+** DONE Establish whether you will use 0 as the 1st index number
+to stay with standard comp sci count (starting at index 0), or starting
+at 1, for the code --> D5: I will refactor to keep a starting index of
+0 for all counts, using a starting count of 1 for only non-technical
+user-facing display values 
+
+
+** TODO Create more granular namespaces
+an item namespace, a list namespace, demo data namespace to increase
+codebase clarity, organization, discoverability / navigability /
+readability
+
+Note: I'm currently using the following namespaces
+*** maria.user
+This namespace is primarily for rendering Hiccup elements, this can be effectively considered the "view V in MVC" namespace
+*** af.list
+This namespace is essentially the "core" of AutoFocus at the moment, one half of the "model M in MVC"
+**** TODO implement namespace af.core
+to encapsulate the application state via a finite state machine, this will be the "controller C in MVC"
+*** af.data
+This namespace is essentially one big hashmap of all the domain data as well as the semantic symbols used for rendering, as well as the "app" informational architecture, this can be considered the remaining half of hte "model M in MVC"
+*** af.demo
+This namespace stores the demo data to construct dummy items, lists, and application state machine instances
+*** af.test
+This namespace is what will, hopefully, be the start of a decent stab at ClojureScript application testing (unit, integration, end-to-end)
+*** TODO convert the above namespace descriptions to be comments in each namespace, and/or a single map at the top of this document, or both
+
+
+** DONE  Tidy up code study tasks
+in their order of creation & code dependencies (pre-reqs/deps go to
+the top, code that relies on pre-reqs/deps goes below) (+ code
+readability) [readability] [low-value]
+
+
+** TODO Remove global references from code
+as much as possible (- bug occurrence frequency, + code quality, +
+code readability) [quality] [readability]
+
+
+** TODO Implement code tasks (ala github issues) as data [IN-PROGRESS]
+
+** TODO Implement user stories collection / test tasks as data [IN-PROGRESS]
+
+** TODO Add anchor tags / jump links to help navigate document more quickly [IN-PROGRESS]
+*** DONE [maria-dot-cloud] To page bottom (brittle, but it works)
+*** DONE To page top (chef's kiss!)
+*** DONE To specific Hiccup rendered headings throughout the code [IN-PROGRESS]
+
+Note: This was much easier in Jupyter Notebooks where I could simply use Markdown headings and jump links 😅
+
+**** TODO Add example JN document w/ jump links example
+
+
+** TODO Move all questions throughout the document
+to the questions area, and link from there to the relevant code cell [IN-PROGRESS]
+
+** TODO relocate all todo's to top of documen
+convert to hashmap data dev-tasks or user-stories as appropriate
+
+** DONE Establish domain model constants, save design decisions as data
+*** DONE create explanation hashmap, instead of saving useful semantic infos as comments, so you can add these infos to the in-app 'help section'
+*** DONE Create initial data values
+*** DONE Create an "informal spec" to describe the data shapes in AutoFocus
+*** DONE Import in text prompts from earlier AF design iteration, then save in DOMAIN-data hashmap... DONE: see af.data/copy-text
+
+** TODO Refactor references to data
+*** DONE :marks-xo --> (DOMAIN-data :marks-cli) : (replace all references to :marks-xo to  (DOMAIN-data :marks-cli)
+
+
+** TODO Consider these ideas [tickler-file] "Ideas to Consider"
+*** [ ] Implement Malli, Spec, or other data validation as necessary, otherwise, leave data-shapes  "functions"  as-is for documentation purposes  (i.e. make an ITEM-valid? function perhaps?) [nice-to-have] [next-time]
+*** [ ] implement todo-text length validation to prevent/discourage todo-items of too short length from being created e.g. :validation #(>  (count %) 2) [nice-to-have]
+*** [ ] implement todo-length validation to prevent creation of todo-items with no text input e.g. :validation #(not (empty? %)) [core-requirement] because creating no-text items is nonsensical, has a negative utility value, and would most likely lead to a negative user experience

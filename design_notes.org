@@ -1,0 +1,198 @@
+* Design Notes FAQ
+
+** TODO [emacs] [org-mode] Learn how to enable auto-format for org-mode clojure code blocks
+
+#+NAME Design Decisions in Data
+#+BEGIN_SRC clojure
+(def design-decisions
+  {:why-list-data-type
+      "The reason for going with the list data type is for its
+	       simplicity of API and the high read speeds it enables."
+	       :why-item-t-index
+	      "In order to implement AutoFocus, the
+				  ability to distinguish between two identical text items
+				  appears to be necessary. Specific cases include:
+				      - VIEWING LIST: consistent, sequential list rendering
+			    (this *could* also be achieved via sorting & dynamiucally indexing,
+			  but it would probably be much less efficient/effective (potential
+			performance bottleneck *and* more logic to write))
+				      - REVIEWING LIST: sequential iteration (this can also be
+		      achieved via atomic state transitions) to compare two items at a time
+		    that are consequetively (but not necessarily contiguously) ordered one 'ready' item and one 'new' item
+				      - DUPLICATE ITEM: to ensure that the duplicate count is valid (though errors of incorrect (and potentially duplicitous duplicate) count values don't seem likely to occur, or matter... Shelving this thought for now.)
+				      - LIST STATE: last-marked-index, last-done-index
+				  For example, how would the algorithm differentiate between two items of identical text value? Furthermore, if the list collection is guarenteed in its ordering, unique indexing may not be necessary. If the todo-items collection is not guarenteed in its ordering (eg. in the case of a hashmap collection), then an additional numerical ordering key would be required."})
+#+END_SRC
+
+** Why make this code sketch?
+
+This "code sketch" is a study to test out different ways of writing in
+and learning Clojure/programming, such as "domain driven design",
+"idiomatic Clojure", and project-based exploratory/Socratic learning
+(learning by doing *and* asking questions). Bonus: Add a "learn in
+public" aspect to boost my motivation & a12y[1] ;) Bonus 2: Teach
+myself how to procedurally create "jump links" to improve large
+notebook navigation 
+
+[1] A12y stands for "accountability".
+
+** What exactly *is* AutoFocus?
+
+"AutoFocus" (abbreviated below in this document to "AF") is a task
+management system made by Mark Forster - See [Mark Forster's AutoFocus
+page](http://markforster.squarespace.com/autofocus-system/) on his
+website. AutoFocus levels up the potential productivity, motivation,
+and clarity of to-do lists by infusing them with elements/aspects of
+bullet journals and binary decision trees. As a task management
+system, AutoFocus may be a similar class of tool to David Allen's
+Getting Things Done ("GTD") system.
+
+*** What are other well-known task management systems exist \/ \/ \/
+today that employ one or more "decision algorithms"?
+**** TODO Research task, ask Mark Forster, ask MF's website forum
+** What are your specific intentions for this code sketch?
+
+As inspired by note taking apps like Notion, as well as at least one
+of the design iterations of AutoFocus[1], I'd like to implement a
+version of AutoFocus that uses a "running list" that can be
+viewed/segmented by creation date[2]. 
+
+[1] There appear to be several versions of AutoFocus, such as
+"AutoFocus Final Version Perfected", "Fast FVP", "AutoFocus Original"
+(also called "AutoFocus 1"). 
+
+[2] The default "list view" is one "page" of to-do items per day,
+though multiple pages per day is another valid approach, with a
+sensible X number of items per page cut-off (such as something like
+10, 15, or 20). 
+
+*** TODO Answer this bonus question: How do the different design \/ \/ \/
+permutations of AutoFocus vary from each other (listed ideally in
+order of creation, from oldest to newest)? 
+** What have I learned?
+*** Hashmaps are not necessarily easy for low-level Clojurists / LISPers \/ \/ \/
+to create sequential structures out of... or maybe they are, and I
+just missed the memo 😅 
+*** Lists are *especially* immutable, and do not encourage index item \/ \/ \/
+"mutations"/"swaps" such as assoc, see StackOverflow post "Easy way to
+change specific list item in list" 
+**** Clojure lists are, under the hood, "linked lists" (the data structure)
+***** there isn't efficient random access
+**** In Clojure, if one is to be often modifying* a collection \/ \/ \/
+(*ie. updating/replacing collection elements, even if the collection
+itself is to be immutable) where order/sequencing matters, is it
+better to use a vector than a list.
+
+** Patterns & "Code-Aromas" Used
+
+*** "It's just data."
+
+All relevant project information is encoded as part of the data model,
+including the worker tasks, user stories, dev stories, and domain
+model information. 
+
+**** TODO Q: What does the expression, "It's just data." refer specifically to?
+
+Is this a reference to the LISP-ism, "Data is code. Code is data." ?
+
+Does this imply a value/efficacy/efficiency judgement/assessment, and if so, in contrast to what alternatives? (For example, by using data instead of code, where data will do, what benefits are introduced?)
+
+*** Single Source of Truth ("SSoT")
+
+Benefits: No more looking for duplicates - data, domain, code,
+functionality are defined *and* described in one place. i.e. If it's
+not in (or linked from) this one page document, then it isn't
+important/included. 
+
+*** Don't Repeat Yourself ("DRY")
+
+Instead of writing the same code multiple times (which increases the
+chances for introducing human error to the codebase), define data and
+functionality once, and call references, as appropriate. Where code
+becomes repetitive, find effective ways to reduce unnecessary
+repetition without sacrificing code readability or application
+performance. 
+
+Note: DRY also gives the benefits of SSoT.
+
+*** Self-Describing Code
+
+Benefits: Reduced usage of / reliance on often brittle, often poorly
+maintained code comments, increased code readability, decreased
+maintenance costs for maintaining "two sources of truth"
+
+Note: Self-describing code also gives the benefits of DRY.
+
+*** Functional Programming ("FP")
+
+A programming paradigm where the usage of (1) pure functions, (2)
+transformations on data, and (3) composition, are encouraged/enforced
+instead/over (4) impure functions, (5) mutations of data, and (6)
+inheritance.
+
+Benefits: Code written with functional programming concepts tends to
+be simpler to reason about, and tends to introduce fewer
+bugs. (Source... ?) Note: Some languages support only FP, and some
+languages have support for multiple programming paradigms. Performance
+impact depends on both the language, the functionality of the
+application/code in question, the runtime, possibly the hardware, and
+possibly other factors. 
+
+
+** Anti-Patterns & Code-Smells Avoided
+
+Place-Oriented Programming ("PLOP")
+
+Magic Numbers / Magic Strings
+
+** Mistakes Made
+
+Premature Optimization (using a hashmap with numerical keys instead of a sequential list/vector)
+
+Having too much fun! (just kidding, this wasn't a mistake, it was a happy accident 😉)
+
+** Will Not Be Needing
+
+SOLID programming "conventions" (see video essay "Where Does Bad Code Come From?" [42 minute watch time], TL;DR I've yet to encounter data to support SOLID as a meaningful, measurable, or helpful metric/indicator of code quality that can be consistently applied for any measurable/demonstrable benefit.)
+
+Q: Would I like to try out a WARMED assessment after finishing the first 30 or so days? TBD...
+
+** Questions
+
+*** TODO Q: Will I use vectors, lists, or hashmaps for the to-do items collection? A: ~~I will use hashmaps.~~ (D5) Correction: I will use vectors.
+
+*** Q: Is it more effective to create a list of items, a vector of items, or a map of items, and why? A: For small applications it may not matter so much, but as an application scales, read-speeds from sequences gets slower and slower, and PLOP can throw many wrenches into scalability (due to sequence specific requirements, bottlenecks, and more). This is why using maps instead of lists or vectors, where appropriate[1], is more effective. Note: This requires that a unique index be added to each item to be selected, sorted, and manipulated.
+
+*** Q: What are the trade-offs for using a hashmap collection instead of a list/vector? A:
+
+Pros of using a hashmap: Fast (constant time) look-ups, scalability to much larger lists
+
+Cons: Lack of built-in ordering & conveniences of sequential ordering / sequencing, which may lead to inefficient/ineffective sequence
+
+**** Q: How might using clj-commons/ordered for its ordered-map data structure help with code clarity, simplicity, performance, readability, etc.? D12: Not yet relevant/necessary.
+
+[1] Note (D5): After considering the trade-offs question further, I'm realizing that the development case most important to me is for list of 200 items or less at this time, since I am more interested in making something work first, and then optimize second... Optimizing for scalability and constant time look-ups sounds very much like a premature optimization.
+
+*** TODO Q: What are semantic *and* scalable alternatives to using a "t-index" integer as a unique lookup key? A: ???
+
+**** Q: Where is a good place to ask this question? A: ???
+
+*** TODO Q: Are semantically labeled keys a component of (recommended, required, or otherwise related to) domain driven design? (For more context, see "marks-xo" hashmap below)
+
+**** Q: Where might be a good place to ask this question? A: ClojureVerse perhaps? Or perhaps to read a Domain Driven Design book?
+
+***** TODO Ask above question
+
+***** Q: What is a good book to read on Domain Driven Design?
+
+*** TODO Q: What is considered a decent number to cap the count of to-do list items "per page" (i.e. display view)? D12: To Be Decided ("TBD")
+
+**** Q: Where is a good place to ask this? A: Mark Forster's forum.
+
+***** TODO Ask above question
+
+*** TODO Q: Does Maria Dot Cloud support custom user defined namespaces *and* multiple namespaces per document? A: Yes, it does!
+
+** Ideas / Brainstorming
+
+*** Use emojis in to-do list items 😃
