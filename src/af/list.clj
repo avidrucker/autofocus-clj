@@ -9,7 +9,7 @@
   ;; TODO: convert these items to user stories
   "Q: What are the things that can be done with an AutoFocus list
   at the 'list level' API?
-- append new item to bottom of list
+  - append new item to bottom of list
   - auto-mark/auto-dot first markable/dottable item (so there is
     always at least one dotted/marked item OR no markable/dottable items)
   - mark/dot item at index n (when reviewing one's list for the
@@ -50,14 +50,14 @@
   - mark/dot item as 'ready' at index n (when reviewing one's list for the purpose of comparing / prioritizing)
   - re-mark bottom-most dotted item as 'done' after 'focus' session
 
-[1] update-list takes a new item, to leave the item creation itself to a dedicated item creation function, which in turn leaves text input to an impure IO function" 
+[1] update-list takes a new item, to leave the item creation itself to a dedicated item creation function, which in turn leaves text input to an impure IO function"
   [{:keys [action input-list new-item-data ;; target-index ;; uncomment when you need index data reliant behavior
            ]}]
   (condp = action
     :append-new (conj input-list (conj
                                   ;; TODO: confirm that naive conj'ing is sufficient, rather than comparing with the highest index item - this may be more relevant for serialization/deserialization
                                   {:t-index (t-next {:target-list input-list})}
-                                  new-item-data)) 
+                                  new-item-data))
     :set-automarkable 2 ;;; TODO: implement stub
     :set-nth-ready 3 ;;; TODO: implement stub
     :set-focused-complete 4 ;;; TODO: implement stub
@@ -84,9 +84,9 @@
   "A list is 'auto-markable' if there are new items and no ready items."
   [{:keys [input-list]}]
   (let [has-new-3?       (has-any-of-status? {:input-list input-list
-                                             :input-status :new})
+                                              :input-status :new})
         has-ready-3?     (has-any-of-status? {:input-list input-list
-                                             :input-status :ready})
+                                              :input-status :ready})
         is-markable-3?   (and has-new-3? (not has-ready-3?))]
     is-markable-3?))
 
@@ -169,7 +169,7 @@
   )
 
 
-   ;; TODO: retire this function as deprecated OR refactor, bc it fails silently when malformed/out-of-bounds index inputs are entered
+;; TODO: retire this function as deprecated OR refactor, bc it fails silently when malformed/out-of-bounds index inputs are entered
 ;; 📖
 (defn- set-nth-item-in-list-to-status
   "Takes in an args-hashmap with three named key-value pair arguments:
@@ -186,7 +186,7 @@
   (let [new-item
         (i/set-item-to-status
          {:input-item  (get input-list n-index)
-                                      :input-status input-status})
+          :input-status input-status})
 
         new-list
         (assoc input-list n-index new-item)]
@@ -212,9 +212,9 @@
   [{:keys [input-list]}]
   (let [;; _        (println "...setting 1st new item in list to ready...") ;; println debugging
         new-list (set-nth-item-in-list-to-status
-         {:input-list input-list
-          :n-index (index-of-first-new-item-in-list {:input-list input-list})
-          :input-status :ready})]
+                  {:input-list input-list
+                   :n-index (index-of-first-new-item-in-list {:input-list input-list})
+                   :input-status :ready})]
     new-list))
 
 
@@ -255,15 +255,15 @@
         new-list
         (update-list
          ;; new item "transaction" data ("tx-data")
-        {:action :append-new
+         {:action :append-new
           :new-item-data input-item
           :input-list target-list})
-        
+
         ;; TODO: disable println debugging
         ;; _ (println ["new list with newly added item: " new-list])
         ;; _ (println ["new list is auto-markable: "
         ;;            (auto-markable-list?-2 new-list)])
-        
+
         ;; note: it would be incorrect to call set-topmost-new-item here bc new items aren't guarenteed to be automarkable
         auto-marked-new-list
         (conditionally-automark-list {:input-list new-list})
@@ -280,9 +280,9 @@
   [{:keys [input-list marks-dict]}]
   (s/join "\n"
           (map #(i/stringify-item
-                                   {:item %
-                                    :dict marks-dict})
-                                 input-list)))
+                 {:item %
+                  :dict marks-dict})
+               input-list)))
 
 
 ;; TODO: implement the logic to transition between ("list manipulation") modes
@@ -354,4 +354,57 @@
 ;; TODO: Implement auto-marking that occurs after adding a new item to the list (such as the first item to the list, or the next item added after all the previous items were marked complete, or on a new page)
 ;; TODO: Experiment taking in user input via a controlled Hiccup/Reagent component
 
+(defn review-question [text1 text2]
+  (str "Do you want to '" text2 "' more than '" text1 "'?"))
+
+
+(def review-test-list
+  [{:t-index 0, :text "b", :status :ready}
+   {:t-index 1, :text "c", :status :new}
+   {:t-index 2, :text "d", :status :new}])
+
+(def review-session
+  {:incoming-list review-test-list
+
+   ;; :initial-item-of-comparison: ;; first-ready-item-text
+   :initial-item-of-comparison (get (first
+                                     (filter-by-status
+                                      {:input-list review-test-list
+                                       :input-status :ready}))
+                                    :text)
+
+   ;; [1 2] ;; these will be determined as the indecies of status `:new` items
+   :reviewables (filter-by-status {:input-list review-test-list
+                                   :input-status :new})
+
+   ;; 0 ;; this will be initialized to the first unmarked (`:status` of `:new`)
+   ;; item index, referring to the cursor position on the list of reviewable items
+   :current-index-cursor (get (first (review-session :reviewables)) :t-index)
+
+   ;; :current-item-of-comparison (review-session :initial-item-of-comparsion) 
+   :answers [:no :yes] ;; these will be supplied by the user
+
+   ;; scheduled changes to the list will be the yes's applied as a status change
+   ;; from `:new` to `:ready` for the reviewable item in question
+   ;; for example, a list of `[:ready :new :new]` will be converted to a list of
+   ;; `[:ready :new :ready]` with input answers of `[:no :yes]`
+   })
+
+(defn individual-review
+  "for a given input-list, a review cursor index,
+  and an answer input, a new list is generated"
+  [{:keys [input-list cursor-index answer-input]}]
+  (let [current-readyest-item (filter-by-status {:input-list input-list
+                                                   :input-status :ready})
+          current-item (get input-list cursor-index)
+          current-question (review-question )]
+
+      )
+  )
+
+(do
+  review-session
+  )
+
+;; post review lists are created as a by-product of review sessions where the answers are applied to the incoming list, and then the new list is returned back to replace the original
 
