@@ -1,5 +1,4 @@
-(ns af.pm)
-;; project management
+(ns af.project-management)
 
 ; Q: Why do single segement namespaces trigger some sort of warning/error  (message to the right in Maria Dot Cloud)?
 ;; A: Single segment namespaces are considered a  "code smell" and/or  "poor code quality" item in Clojure(Script). This is not a unique feature to Maria Dot Cloud. ~ Avi. TODO: Verify this answer.
