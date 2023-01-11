@@ -363,47 +363,82 @@
    {:t-index 1, :text "c", :status :new}
    {:t-index 2, :text "d", :status :new}])
 
-(def review-session
-  {:incoming-list review-test-list
+;; REVIEW DESIGN
+;; A review is simply one comparison of two items in a to-do list 
+;; where an answer of 'yes' to the question will mark the current 
+;; review index `:new` item to become `:ready`  
+(defn create-single-review-comparison
+  "[pure function] Inputs `input-list` and `review-index`:
+   - `input-list` is the user's entire current to-do list
+   - `review-index` is the index referring to the cursor on 
+     the list of reviewable items (`current-reviewable-items`)
+   TEMPORARY INPUT user-answer: this is either :yes or :no
+   "
+  [{:keys [input-list review-index user-answer]}]
+  (let [;; Note: This was called the "CMWTD" or "current most want to do" 
+        ;; item in older implementations of AF made by AD
+        ;; Now called the 'highest priority' (ready) item, the bottom-most 
+        ;; `:ready` item is what is compared against
+        highest-priority-ready-item
+        (last (filter-by-status  {:input-list input-list
+                                  :input-status :ready}))
 
-   ;; :initial-item-of-comparison: ;; first-ready-item-text
-   :initial-item-of-comparison (get (first
-                                     (filter-by-status
-                                      {:input-list review-test-list
-                                       :input-status :ready}))
-                                    :text)
+        ;; Initially starting at zero, this increments by one until the 
+        ;; review session is over
+        ;; 0 ;; this will be initialized to the first unmarked (`:status` of `:new`) *AFTER* the last marked
+        ;; review-list-index-cursor, referring to the cursor position on the list of reviewable items
+        ;; Index used to get current `:new` item to compare against "highest priority" `:ready` item
+        current-review-index  (if (nil? review-index) 0 review-index)
 
-   ;; [1 2] ;; these will be determined as the indecies of status `:new` items
-   :reviewables (filter-by-status {:input-list review-test-list
-                                   :input-status :new})
+        hpri-index            (get highest-priority-ready-item :t-index)
+        hpri-text             (get highest-priority-ready-item :text)
 
-   ;; 0 ;; this will be initialized to the first unmarked (`:status` of `:new`)
-   ;; item index, referring to the cursor position on the list of reviewable items
-   :current-index-cursor (get (first (review-session :reviewables)) :t-index)
+        ;; all `:new` items *AFTER* the `highest-priority-ready-item`
+        current-reviewable-items ;; "the reviewables"
+        (filter-by-status {:input-list (subvec input-list (inc hpri-index))
+                           :input-status :new})
 
-   ;; :current-item-of-comparison (review-session :initial-item-of-comparsion) 
-   :answers [:no :yes] ;; these will be supplied by the user
+        ;; Q: Is this a good use case for get-in ? TODO: tidy up this code
+        current-new-item-text (get (get
+                                    current-reviewable-items
+                                    current-review-index)
+                                   :t-index)
 
+        current-question            (review-question hpri-text current-new-item-text)
+        _                           (println ["current question" current-question])
+        ;; YES CASE:
+        ;; return the list back with the review index incremented by one,
+        ;; and the current-new-item changed into a :ready item
+
+        ;; NO CASE: return the list back with only the review index incremented by one
+        ]
+    )
+  {
+   
    ;; scheduled changes to the list will be the yes's applied as a status change
    ;; from `:new` to `:ready` for the reviewable item in question
    ;; for example, a list of `[:ready :new :new]` will be converted to a list of
    ;; `[:ready :new :ready]` with input answers of `[:no :yes]`
    })
 
-(defn individual-review
+(defn submit-individual-review
   "for a given input-list, a review cursor index,
-  and an answer input, a new list is generated"
+  and an answer input, a new list and cursor is generated"
   [{:keys [input-list cursor-index answer-input]}]
   (let [current-readyest-item (filter-by-status {:input-list input-list
                                                    :input-status :ready})
           current-item (get input-list cursor-index)
-          current-question (review-question )]
-
+          ;; current-question (review-question )
+        ]
+    ;; return review-map with new list and new cursor
+    {:output-list [] ;; TODO: create the updated list here
+     :next-cursor (inc cursor-index)}
       )
   )
 
 (do
-  review-session
+  (submit-individual-review {:input-list review-test-list
+                             :answer-input :yes} )
   )
 
 ;; post review lists are created as a by-product of review sessions where the answers are applied to the incoming list, and then the new list is returned back to replace the original
