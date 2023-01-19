@@ -354,58 +354,118 @@
 ;; TODO: Implement auto-marking that occurs after adding a new item to the list (such as the first item to the list, or the next item added after all the previous items were marked complete, or on a new page)
 ;; TODO: Experiment taking in user input via a controlled Hiccup/Reagent component
 
-(defn review-question [text1 text2]
-  (str "Do you want to '" text2 "' more than '" text1 "'?"))
+(defn review-question
+  [{:keys [priority-item-text cursor-item-text]}]
+  (str "Do you want to '" cursor-item-text 
+       "' more than '" priority-item-text "'?"))
 
+(defn get-priority-item-from-list
+  [{:keys [input-list]}]
+  (last (filter-by-status  {:input-list input-list, :input-status :ready}))) 
+
+(defn get-first-new-item-after-index
+  "Takes an input list and input-index (likely to be a cursor-index or priority-item-index),
+   and returns back the next item index where the item has a :status of :new"
+  [{:keys [input-list input-index]}]
+  (let [
+        items-after-input-index (subvec input-list (inc input-index))
+
+        ;; filter out items of :status :new, and get the first in the list
+        next-new-item-after-index
+        (first (filter-by-status {:input-list items-after-input-index :input-status :new})) 
+        
+        ;; if there was another :status :new item, we save its :t-index, 
+        ;; otherwise, we have nil for the next-cursor
+        first-new-item-index-after 
+        (if (nil? next-new-item-after-index) nil (get next-new-item-after-index :t-index))
+        ]
+    first-new-item-index-after))
+
+(defn get-first-new-item-after-priority-item
+  [{:keys [input-list]}]
+  (let [priority-item (get-priority-item-from-list {:input-list input-list})
+        priority-item-index (get priority-item :t-index) ;; 'input-index' 
+        next-new-item-index (get-first-new-item-after-index {:input-list input-list :input-index priority-item-index})] 
+    next-new-item-index))
+
+(defn list-and-cursor-to-question 
+  [{:keys [input-list cursor-input]}]
+  (let [priority-item (get-priority-item-from-list {:input-list input-list})
+        cursor-item (get input-list cursor-input)
+        priority-item-text (get priority-item :text)
+        cursor-item-text (get cursor-item :text)]
+    (review-question {:priority-item-text priority-item-text 
+                      :cursor-item-text cursor-item-text})))
 
 (def review-test-list
   [{:t-index 0, :text "b", :status :ready}
    {:t-index 1, :text "c", :status :new}
    {:t-index 2, :text "d", :status :new}])
 
+(def review-test-list-2
+  [{:t-index 0, :text "a", :status :ready}
+   {:t-index 1, :text "b", :status :new}
+   {:t-index 2, :text "c", :status :done}
+   {:t-index 3, :text "d", :status :new}])
+
+(def review-test-list-3
+  [{:t-index 0, :text "a", :status :ready}
+   {:t-index 1, :text "b", :status :new}
+   {:t-index 2, :text "c", :status :new}
+   {:t-index 3, :text "d", :status :new}])
+
 ;; REVIEW DESIGN
-;; A review is simply one comparison of two items in a to-do list 
-;; where an answer of 'yes' to the question will mark the current 
-;; review index `:new` item to become `:ready`  
+;; A review is simply one comparison of two items in a to-do list
+;; (the priority :ready item and one of the following :new items)
+;; where an answer of 'yes' to the comparisxon question will change 
+;; the current cursor index `:new` item status to `:ready`
+;; Note: This will be the "parent" function that composes together 
+;; the smaller "children" functions
 (defn create-single-review-comparison
   "[pure function] Inputs `input-list` and `review-index`:
    - `input-list` is the user's entire current to-do list
    - `review-index` is the index referring to the cursor on 
      the list of reviewable items (`current-reviewable-items`)
    TEMPORARY INPUT user-answer: this is either :yes or :no
+   
+   'priority-item': This was called the 'CMWTD' or 'current most want to do' 
+        item in older implementations of AF made by AD
+        The priority item is simply the bottom-most 
+        `:ready` item, and it is what is compared against when
+        conducting review sessions.
+        Alternate name: 'highest-priority-ready-item'
    "
-  [{:keys [input-list review-index user-answer]}]
-  (let [;; Note: This was called the "CMWTD" or "current most want to do" 
-        ;; item in older implementations of AF made by AD
-        ;; Now called the 'highest priority' (ready) item, the bottom-most 
-        ;; `:ready` item is what is compared against
-        highest-priority-ready-item
-        (last (filter-by-status  {:input-list input-list
-                                  :input-status :ready}))
+  [{:keys [input-list cursor-input user-answer]}]
+  (let [
+        priority-item (get-priority-item-from-list {:input-list input-list})
 
-        ;; Initially starting at zero, this increments by one until the 
-        ;; review session is over
-        ;; 0 ;; this will be initialized to the first unmarked (`:status` of `:new`) *AFTER* the last marked
-        ;; review-list-index-cursor, referring to the cursor position on the list of reviewable items
-        ;; Index used to get current `:new` item to compare against "highest priority" `:ready` item
-        current-review-index  (if (nil? review-index) 0 review-index)
+        ;; The cursor-index is initialized to the first `:new` item *AFTER*
+        ;; the priority-item, where [THIS IS IMPORTANT] the index is of the **original** list.
+        ;; This index is used in turn to get current `:new` item to compare against priority-item
+        ;; Alternate names: "current-review-index", "review-cursor-index"
+        ;; TODO: fix bug where the default cursor-index is set to zero, when it should be 
+        ;; instead initialized to the first :new item *AFTER* the priority-item
+        cursor-index  (if (nil? cursor-input) 
+                          (get-first-new-item-after-priority-item {:input-list input-list})
+                          cursor-input)
 
-        hpri-index            (get highest-priority-ready-item :t-index)
-        hpri-text             (get highest-priority-ready-item :text)
+        ;; priority-item-index            (get priority-item :t-index)
+        priority-item-text             (get priority-item :text)
 
         ;; all `:new` items *AFTER* the `highest-priority-ready-item`
-        current-reviewable-items ;; "the reviewables"
-        (filter-by-status {:input-list (subvec input-list (inc hpri-index))
-                           :input-status :new})
+        ;; "the reviewables"
+        ;; current-reviewable-items (filter-by-status {:input-list 
+        ;;                                             (subvec input-list 
+        ;;                                                     (inc priority-item-index)) 
+        ;;                                             :input-status :new})
 
         ;; Q: Is this a good use case for get-in ? TODO: tidy up this code
-        current-new-item-text (get (get
-                                    current-reviewable-items
-                                    current-review-index)
-                                   :t-index)
+        cursor-item-text (get (get input-list cursor-index) :t-index)
 
-        current-question            (review-question hpri-text current-new-item-text)
-        _                           (println ["current question" current-question])
+        current-question               (list-and-cursor-to-question {:input-list input-list 
+                                                                     :cursor-input cursor-index})
+        ;; _                           (println ["current question" current-question])
+        
         ;; YES CASE:
         ;; return the list back with the review index incremented by one,
         ;; and the current-new-item changed into a :ready item
@@ -422,24 +482,94 @@
    })
 
 (defn submit-individual-review
-  "for a given input-list, a review cursor index,
-  and an answer input, a new list and cursor is generated"
-  [{:keys [input-list cursor-index answer-input]}]
-  (let [current-readyest-item (filter-by-status {:input-list input-list
-                                                   :input-status :ready})
-          current-item (get input-list cursor-index)
-          ;; current-question (review-question )
+  "For a given input-list, a cursor index, and an 
+   answer input, a new list and cursor is generated.
+   
+   When answer-input is `:yes`, current-item gets marked as 
+   `:ready` (ie. a new list is returned with the item at the 
+   same index as current-item having a `:ready` status)
+   
+   When answer-input is `:no`, we simply update the cursor index
+   and return the input-list as-is"
+  [{:keys [input-list cursor-input answer-input]}]
+  (let [
+        current-item (get input-list cursor-input)
+        current-item-index (get current-item :t-index)
+        
+        ;; get the index of the next :new item
+        ;; first, get all the items after the cursor
+        items-after-cursor (subvec input-list (inc current-item-index)) 
+        
+        ;; filter out items of :status :new, and get the first in the list
+        next-new-item-after-cursor 
+        (first (filter-by-status {:input-list items-after-cursor :input-status :new}))
+        
+        ;; if there was another :status :new item, we save its :t-index, 
+        ;; otherwise, we have nil for the next-cursor
+        next-cursor (if (nil? next-new-item-after-cursor)
+                        nil
+                        (get next-new-item-after-cursor :t-index))
         ]
-    ;; return review-map with new list and new cursor
-    {:output-list [] ;; TODO: create the updated list here
-     :next-cursor (inc cursor-index)}
-      )
-  )
+    ;; return review-map with output-list and new cursor 
+    {:output-list (if (= answer-input :yes)
+                    ;; when the answer is yes, a newly created list is returned
+                    (set-nth-item-in-list-to-status 
+                     {:input-list input-list
+                      :n-index current-item-index
+                      :input-status :ready})
+                    ;; else, the input-list is returned as-is
+                    input-list)
+     :next-cursor next-cursor}))
 
-(do
-  (submit-individual-review {:input-list review-test-list
-                             :answer-input :yes} )
-  )
+(every? true? [(=
+   {:output-list
+    [{:t-index 0 :text "b" :status :ready}
+     {:t-index 1 :text "c" :status :ready}
+     {:t-index 2 :text "d" :status :new}]
+    :next-cursor 2}
+   (submit-individual-review {:input-list review-test-list
+                              :cursor-input 1
+                              :answer-input :yes}))
 
-;; post review lists are created as a by-product of review sessions where the answers are applied to the incoming list, and then the new list is returned back to replace the original
+  (=
+   {:output-list
+    [{:t-index 0 :text "b" :status :ready}
+     {:t-index 1 :text "c" :status :new}
+     {:t-index 2 :text "d" :status :new}]
+    :next-cursor 2}
+   (submit-individual-review {:input-list review-test-list
+                              :cursor-input 1
+                              :answer-input :no}))
 
+  (=
+   {:output-list
+    [{:t-index 0, :text "a", :status :ready}
+     {:t-index 1, :text "b", :status :ready}
+     {:t-index 2, :text "c", :status :done}
+     {:t-index 3, :text "d", :status :new}],
+    :next-cursor 3}
+   (submit-individual-review {:input-list review-test-list-2
+                              :cursor-input 1
+                              :answer-input :yes}))
+
+  (=
+   "Do you want to 'b' more than 'a'?"
+   (list-and-cursor-to-question {:input-list review-test-list-2
+                                 :cursor-input 1}))
+
+  (=
+   "Do you want to 'd' more than 'a'?"
+   (list-and-cursor-to-question {:input-list review-test-list-2
+                                 :cursor-input 3}))
+
+  (=
+   {:output-list
+    [{:t-index 0, :text "a", :status :ready}
+     {:t-index 1, :text "b", :status :new}
+     {:t-index 2, :text "c", :status :new}
+     {:t-index 3, :text "d", :status :new}],
+    :next-cursor 3}
+   (submit-individual-review {:input-list review-test-list-3
+                              :cursor-input 2
+                              :answer-input :no}))
+  ])
