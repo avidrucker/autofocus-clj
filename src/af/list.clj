@@ -19,7 +19,8 @@
 
 ;; DONE: Implement auto-dotting logic for first-dottable-item
 ;; DONE: write a function that creates to-do list items as-is (without a t-index)
-;; DONE: write a function that takes a created to-do list item without a t-index, adds a t-index key-value pair to it, and stick its onto the bottom of a to-do list
+;; DONE: write a function that takes a created to-do list item without a t-index, 
+;; adds a t-index key-value pair to it, and stick its onto the bottom of a to-do list
 ;; DONE: extract from the af.list namespace a separate af.item namespace as you see fit
 
 ;;;; TODO: implement the following function stubs
@@ -33,29 +34,39 @@
 (defn t-next
   "serves up what the upcoming t-index is to be for the next added to-do list item"
   [{:keys [target-list]}]
-  ;; TODO: write a test that confirms that the first item in a list has a t-index of 0, the 2nd item a t-index of 1, etc..
+  ;; TODO: write a test that confirms that the first item in a list has a t-index of 0, 
+  ;; the 2nd item a t-index of 1, etc..
   (count target-list))
 
-;; TODO: Write a test that confirms that after creating new items that the list t-index values return back true from (distinct?) See: ClojureDocs: distinct?
+;; TODO: Write a test that confirms that after creating new items that the list t-index 
+;; values return back true from (distinct?) See: ClojureDocs: distinct?
 
 
 ;; 🆙
 (defn update-list
   ;; TODO: relocate to af.modes namespace
   ;; TODO: implement stubs
-  "A function which dispatches based on an action keyword (and is a pure function) to update a user's to-do list as a result of a new item addition, list reviewing, or list focusing. Note: This function may run more than once in order to update as needed for automarking, duplicating, or other purposes... TODO: Assess Q: Does this make the code harder to understand/read?
+  ;; TODO: confirm where an index is explicitly necessary to update a to-do list
+  "A function which dispatches based on an action keyword (and is a pure function) 
+  to update a user's to-do list as a result of a new item addition, list reviewing, 
+   or list focusing. Note: This function may run more than once in order to update 
+   as needed for automarking, duplicating, or other purposes... 
+   TODO: Assess Q: Does this make the code harder to understand/read?
 
 - append new item to bottom of list[1]
-  - auto-mark/auto-dot first markable/dottable item as 'ready' (so there is always at least one dotted/marked item OR no markable/dottable items)
-  - mark/dot item as 'ready' at index n (when reviewing one's list for the purpose of comparing / prioritizing)
+  - auto-mark/auto-dot first markable/dottable item as 'ready' (so there is always 
+   at least one dotted/marked item OR no markable/dottable items)
+  - mark/dot item as 'ready' at index n (when reviewing one's list for the purpose 
+   of comparing / prioritizing)
   - re-mark bottom-most dotted item as 'done' after 'focus' session
 
-[1] update-list takes a new item, to leave the item creation itself to a dedicated item creation function, which in turn leaves text input to an impure IO function"
-  [{:keys [action input-list new-item-data ;; target-index ;; uncomment when you need index data reliant behavior
+[1] update-list takes a new item, to leave the item creation itself to a dedicated 
+   item creation function, which in turn leaves text input to an impure IO function"
+  [{:keys [action input-list new-item-data
+           ;; target-index ;; uncomment if/when you need index data reliant behavior
            ]}]
-  (condp = action
-    :append-new (conj input-list (conj
-                                  ;; TODO: confirm that naive conj'ing is sufficient, rather than comparing with the highest index item - this may be more relevant for serialization/deserialization
+  (condp = action 
+    :append-new (conj input-list (conj 
                                   {:t-index (t-next {:target-list input-list})}
                                   new-item-data))
     :set-automarkable 2 ;;; TODO: implement stub
@@ -63,11 +74,14 @@
     :set-focused-complete 4 ;;; TODO: implement stub
     ))
 
-
-;; DONE: Implement the auto-marking/auto-dotting of the first added item immediately after adding it
- ;; DONE: Test that auto-marking works on the first item added to an empty list
-  ;; TODO: Test that auto-marking works on a new item added to a list that has only 0 items in it of status 'done'  (in other words:  "Implement auto-marking that occurs after adding a new item to the list (such as the first item to the list, or the next item added after all the previous items were marked complete, or on a new page)")
-
+;; DONE: Implement the auto-marking/auto-dotting of the first added item immediately 
+;; after adding it
+;; DONE: Test that auto-marking works on the first item added to an empty list
+;; TODO: Test that auto-marking works on a new item added to a list that has only 0 
+;; items in it of status 'done'  (in other words:  "Implement auto-marking that 
+;; occurs after adding a new item to the list (such as the first item to the list, 
+;; or the next item added after all the previous items were marked complete, or on 
+;; a new page)")
 
 ;; PURE FUNC
 ;; TODO: refactor to use `pos` instead of `> 0`
@@ -76,19 +90,19 @@
   "checks a list to see if it contains items with a given status"
   [{:keys [input-list input-status]}]
   (let [item-statuses (map :status input-list)]
-    (> (count (filter #(= % input-status) item-statuses)) 0)))
+    (pos? (count (filter #(= % input-status) item-statuses)))))
 
 
 ;; 🏁
 (defn- is-auto-markable-list?
-  "A list is 'auto-markable' if there are new items and no ready items."
+  "A list is 'auto-markable' if there are any new items and zero ready items."
   [{:keys [input-list]}]
-  (let [has-new-3?       (has-any-of-status? {:input-list input-list
+  (let [has-new-items?       (has-any-of-status? {:input-list input-list
                                               :input-status :new})
-        has-ready-3?     (has-any-of-status? {:input-list input-list
+        has-ready-items?     (has-any-of-status? {:input-list input-list
                                               :input-status :ready})
-        is-markable-3?   (and has-new-3? (not has-ready-3?))]
-    is-markable-3?))
+        is-markable-list?   (and has-new-items? (not has-ready-items?))]
+    is-markable-list?))
 
 
 (comment
@@ -96,7 +110,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; REPL driven development testing
   (true?
-   (is-auto-markable-list? {:input-list  [{:t-index 0, :text "a", :status :new}]}))
+   (is-auto-markable-list? {:input-list  
+                            [{:t-index 0, :text "a", :status :new}]}))
 
   #_(filter #(= (:status %) :new) [{:text "z" :status :new}])
   (println "---------------------")
@@ -140,16 +155,22 @@
   If no index is found, then this function will return nil.
 
   Note: This function was originally named `auto-markable-index-1`"
-  ;; TODO: determine whether the first found item's index is always guarenteed to be the item's index number itself
-;; TODO: determine that this function returns 0 correctly for the first newly added item at precisely the right time (this should be true only once the first item has been added to a list, not before because the list would have been empty, nor just after, because the list is to be auto-marked/auto-dotted immediately after adding the first item) 
+  ;; TODO: confirm that this function correctly returns nil when there are no new 
+  ;;       items in a list
+  ;; TODO: determine whether the first found item's index is always guarenteed to 
+  ;;       be the item's index number itself
+  ;; TODO: determine that this function returns 0 correctly for the first newly 
+  ;;       added item at precisely the right time (this should be true only once 
+  ;;       the first item has been added to a list, not before because the list 
+  ;;       would have been empty, nor just after, because the list is to be 
+  ;;       auto-marked/auto-dotted immediately after adding the first item) 
   [{:keys [input-list]}]
   (let [has-new?       (has-any-of-status? {:input-list input-list
                                            :input-status :new})]
     (when has-new?
       (let [first-found-index (first-index-of-attr
                                {:input-list input-list
-                                :target-attr :new})
-            ]
+                                :target-attr :new})]
         first-found-index))))
 
 (comment
@@ -169,19 +190,24 @@
   )
 
 
-;; TODO: retire this function as deprecated OR refactor, bc it fails silently when malformed/out-of-bounds index inputs are entered
+;; TODO: retire this function as deprecated OR refactor, bc it fails silently 
+;;       when malformed/out-of-bounds index inputs are entered
+;; TODO: reconsider whether this function must be retired, bc it is OK to have
+;;       'unsafe' functions (ones that cannot handle invalid input) as long as
+;;       they are wrapped behind an interface/abstraction w/ guardrails
 ;; 📖
 (defn- set-nth-item-in-list-to-status
   "Takes in an args-hashmap with three named key-value pair arguments:
   - an input-list
   - an index of an item to 'modify'
   - the target item's (soon to be) new status
-  Returns back a new todo-list with the nth index element item's status set to the inputted status
+  Returns back a new todo-list with the nth index element item's status set to 
+  the inputted status
 
   Notes:
-  - This function does not currently check or acount for for out-of-bounds errors/exceptions.
-  - This was called `set-nth-ready-1`
-  "
+  - This function does not currently check or acount for for out-of-bounds 
+    errors/exceptions.
+  - This was called `set-nth-ready-1`"
   [{:keys [input-list n-index input-status]}]
   (let [new-item
         (i/set-item-to-status
@@ -190,30 +216,35 @@
 
         new-list
         (assoc input-list n-index new-item)]
-     ;; TODO: remove in-bounds check from here, this should be a separate check elsewhere  (ie. move to the domain context boundary) 
-     ;; (if (in-bounds-inclusive? {:valid-floor 1
-     ;; :valid-max (dec (count input-list))
-     ;; :input-n n-index})
+    ;; TODO: remove in-bounds check from here, this should be a separate 
+    ;;       check elsewhere  (ie. move to the domain context boundary) 
+    ;; (if (in-bounds-inclusive? {:valid-floor 1
+    ;; :valid-max (dec (count input-list))
+    ;; :input-n n-index})
     new-list
-     ;; input-list ;; else, return the list as-is  (b/c n-index is out-of-bounds)
+    ;; input-list ;; else, return the list as-is  (b/c n-index is out-of-bounds)
     ))
 
 ;; TODO: test to confirm that this function works as desired
-;; TODO: fix bug where it appears that all newly added items are getting marked as `:ready` !!!!
-;; TODO: add spec clause to confirm that, when this function is called, it is only called on auto-markable lists
+;; DONE: fix bug where it appears that all newly added items are getting marked 
+;;       as `:ready` !!!!
+;; TODO: add spec clause to confirm that, when this function is called, it is 
+;;       only called on auto-markable lists
 ;; 🪄
 (defn- set-1st-new-item-in-list-to-ready
   "This function always sets the topmost new item's status to 'ready'.
-  It currently performs NO checks for data validity.
-  Therefore, this function is to be called if and only if, a list is auto-markable.
+  It currently performs NO checks for data validity. Therefore, this function 
+   is to be called if and only if a list is auto-markable.
 
   Previous names: `set-topmost-new-item-in-list-to-ready!`
                   and `set-first-new-item-to-ready`"
   [{:keys [input-list]}]
-  (let [;; _        (println "...setting 1st new item in list to ready...") ;; println debugging
+  (let [;; println debugging
+        ;; _        (println "...setting 1st new item in list to ready...")
         new-list (set-nth-item-in-list-to-status
                   {:input-list input-list
-                   :n-index (index-of-first-new-item-in-list {:input-list input-list})
+                   :n-index (index-of-first-new-item-in-list 
+                             {:input-list input-list})
                    :input-status :ready})]
     new-list))
 
@@ -230,28 +261,40 @@
   `auto-mark-1st-markable-in-list!`, `dot-first-dottable-item`,
   `mark-first-markable-item`"
   [{:keys [input-list]}]
-  (let [;; _ (println "...conditionally automarking list...") ;; println debugging    
+  (let [;; println debugging
+        ;; _ (println "...conditionally automarking list...")
         auto-markable (is-auto-markable-list? {:input-list input-list})]
     (if auto-markable
       (set-1st-new-item-in-list-to-ready {:input-list input-list})
       input-list)))
 
 
-;; TODO: refactor list logic so that way the update-list function is called in the next namespace, rather than here, similar to `conduct-focus-on-list`
+;; TODO: refactor list logic so that way the update-list function is called in 
+;; the next namespace, rather than here, similar to `conduct-focus-on-list`
 ;; ➕
 (defn add-item-to-list
-  ;; TODO: refactor via separation principle  (ie. as possible, make one function that makes items, and make one function that adds items to a list, and compose them in that way) 
-  "This function takes in an input item and target list, and then 'adds' said item to the list by making a brand new list with the input item appended on to the end.
+  ;; TODO: refactor via separation principle  (ie. as possible, make one 
+  ;; function that makes items, and make one function that adds items to 
+  ;; a list, and compose them in that way) 
+  "This function takes in an input item and target list, and then 'adds' said 
+   item to the list by making a brand new list with the input item appended on 
+   to the end.
 
-  Note: This function is part the list namespace's 'public' API, and is meant to be used by other namespaces.
+  Note: This function is part the list namespace's 'public' API, and is meant 
+   to be used by other namespaces.
   
-  Work-In-Progress language: 'transacts' (on?) the to-do items collection 'database' (i.e. the to-do list)"
+  Work-In-Progress language: 'transacts' (on?) the to-do items collection 
+   'database' (i.e. the to-do list)"
   [{:keys [input-item target-list]}]
   (let [;; TODO: disable println debugging
-        ;;_  (println "...adding item to list...") ;; debugging
+        ;; _  (println "...adding item to list...") ;; debugging
 
-        ;; TODO: double-check that setting this here is appropriate and effective for both new items, duplicate items, as well as any other adding items to list scenarios that utilize this function
-        ;; note: adding new items does not require a target index bc new items are always appended to the end/bottom/back of the list - TODO: confirm where an index is explicitly necessary to update a to-do list
+        ;; TODO: double-check that setting this here is appropriate and 
+        ;;       effective for both new items, duplicate items, as well 
+        ;;       as any other adding items to list scenarios that 
+        ;;       utilize this function
+        ;; note: adding new items does not require a target index bc 
+        ;; new items are always appended to the end/bottom/back of the list 
         new-list
         (update-list
          ;; new item "transaction" data ("tx-data")
@@ -385,7 +428,8 @@
   [{:keys [input-list]}]
   (let [priority-item (get-priority-item-from-list {:input-list input-list})
         priority-item-index (get priority-item :t-index) ;; 'input-index' 
-        next-new-item-index (get-first-new-item-after-index {:input-list input-list :input-index priority-item-index})] 
+        next-new-item-index (get-first-new-item-after-index {:input-list input-list 
+                                                             :input-index priority-item-index})] 
     next-new-item-index))
 
 (defn list-and-cursor-to-question 
