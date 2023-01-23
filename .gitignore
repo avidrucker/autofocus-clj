@@ -5,3 +5,4 @@
 .clj-kondo
 .lsp/*
 output.calva-repl
+.vscode/settings.json
