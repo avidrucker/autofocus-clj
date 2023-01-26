@@ -5,12 +5,45 @@
    [af.item :as i]
    [af.list :as l]
    [clojure.string :as s]
+   [clojure.set :as cs]
+   ;; [clojure.data :as cd]
+   ;; TODO: resolve issue where clojure.tools.cli (cli/clear) is not found
    ;; [clojure.tools.cli :as cli]
    ))
 
+;; CLI Constants
+(def CLI-FENCE "----------")
+(def NEWLINE "\n")
+
+
+;; App State Control Data
+(def menu-options-map
+  "This is a mapping between the terse and verbose menu option names."
+  {:add         :add-new-item
+   :prioritize  :prioritize-list
+   :do          :do-priority-item
+   :about       :about-autofocus
+   :example     :af-example-irl
+   :how-to      :how-to-af
+   :quit        :quit-application})
+
+
+(def ADD (get menu-options-map :add))
+(def PRIORITIZE (get menu-options-map :prioritize))
+(def DO (get menu-options-map :do))
+(def ABOUT (get menu-options-map :about))
+(def EXAMPLE (get menu-options-map :example))
+(def HOW-TO (get menu-options-map :how-to))
+(def QUIT (get menu-options-map :quit))
+
+
+(def base-menu-options
+  "Note: Menu options include both AutoFocus list actions as well application actions."
+  [ADD ABOUT EXAMPLE HOW-TO QUIT])
+
+
 
 ;;;; TODO: implement console clearing
-
 
 
   ;; Q: Is this file this project's "entry point"?
@@ -64,7 +97,7 @@ done - a fully filled-in circle, brackets with an 'x' inside [x]
           (do
             ;; TODO: replace literal string hyphen/dash fences with def binding 
             (println (str "You selected choice #" input "."
-                          "\n----------"))
+                          NEWLINE CLI-FENCE))
             ;; (println (str "You inputted '" input
             ;;               "'. Thank you for the valid input!"))
             (Integer/parseInt input))
@@ -111,63 +144,114 @@ done - a fully filled-in circle, brackets with an 'x' inside [x]
     (if user-quitted? nil inputted-text)))
 
 
-(def menu-options-map
-  "This is a mapping between the terse and verbose menu option names."
-  {:add         :add-new-item
-   :prioritize  :prioritize-list
-   :do          :do-priority-item
-   :about       :about-autofocus
-   :example     :af-example-irl
-   :how-to      :how-to-af
-   :quit        :quit-application})
-
-
-(def ADD (get menu-options-map :add))
-(def PRIORITIZE (get menu-options-map :priotize))
-(def DO (get menu-options-map :do))
-(def ABOUT (get menu-options-map :about))
-(def EXAMPLE (get menu-options-map :example))
-(def HOW-TO (get menu-options-map :how-to))
-(def QUIT (get menu-options-map :quit))
-
-
-(def base-menu-options
-  "Note: Menu options include both AutoFocus list actions as well application actions."
-  [ADD ABOUT EXAMPLE HOW-TO QUIT])
-
-
-;; TODO: implement the increasing of menu options dynamically based on list state
-(defn get-valid-menu-options
-  "By reviewing the input-list, this function can determine
-  which menu options should be added to the menu-options list."
+;; Question: How can I diff between two vectors of keywords in Clojure?
+;; TODO: implement menu options list generation dynamically based on list state
+(defn invalid-menu-options
+  "This is used a helper to `get-valid-menu-options` by indicating which menu options should be removed."
   [{:keys [input-list]}]
-  (let [prioritizable-list? (str "stub") ;; TODO: implement stub
-        actionable-list? (l/is-focusable-list?
-                          {:input-list input-list})]
-    (case
-     (and prioritizable-list? actionable-list?)
-      [PRIORITIZE DO]
+  (let [prioritizable-list?  (l/is-prioritizable-list?
+                              {:input-list input-list})
+        doable-list?         (l/is-doable-list?
+                              {:input-list input-list})
+        _                    (println ["prioritizable-list?: " prioritizable-list?
+                                       "\ndoable-list?: " doable-list?])]
+    (cond
+      ;; remove nothing
+     (and prioritizable-list? doable-list?)
+     []
 
-      (and (not prioritizable-list?) actionable-list?)
-      [DO]
-
-      (and prioritizable-list? (not actionable-list?))
-      [PRIORITIZE]
-
-      (and (not prioritizable-list?) (not actionable-list?))
-      [])))
+     ;; remove prioritize
+     (and (not prioritizable-list?) doable-list?)
+     [PRIORITIZE]
+     
+     ;; remove do
+     (and prioritizable-list? (not doable-list?))
+     [DO]
+     
+     ;; remove both options
+     (and (not prioritizable-list?) (not doable-list?))
+     [PRIORITIZE DO]
+     )))
 
 
 ;; TODO: implement the sorting of the menu by custom ordering/ranking
 (def menu-options-order
   "used to sort menu options before they are displayed"
-  {ADD 0
-   PRIORITIZE 4
-   DO 5
-   ABOUT 6
-   EXAMPLE 7
-   HOW-TO 8
-   QUIT 9})
+  [ADD PRIORITIZE DO ABOUT EXAMPLE HOW-TO QUIT])
+
+
+(defn get-valid-menu-options
+  "By reviewing the input-list, this function can determine
+  which menu options should be added to the menu-options list."
+  [{:keys [input-list input-menu-options]}]
+  (vec (cs/difference ;; Q: cd/diff wouldn't work for some reason, but why?
+        (set input-menu-options)
+        (set (invalid-menu-options {:input-list input-list})))))
+
+
+;; ----------------------------------
+;; Question: How can I implement my own custom sorting order in Clojure?
+
+#_(defn sort-menu-options
+  [{:keys [input-set input-order]}]
+  (sort-by
+   #((into [] (map-indexed
+                       (fn [index element] [element index])) input-order) %) input-set))
+
+;; source: https://stackoverflow.com/questions/4830900/how-do-i-find-the-index-of-an-item-in-a-vector
+;; native Clojure implementation of "index-of"
+(defn find-thing [needle haystack]
+  (first (keep-indexed #(when (= %2 needle) %1) haystack)))
+
+;; (find-thing QUIT menu-options-order)
+;; (find-thing :potato menu-options-order)
+
+(defn sort-menu-options [{:keys [input-unsorted input-order]}]
+  (println ["...attempting to sort..."
+            "coll to be ordered: " input-unsorted
+            "correct ordering: " input-order])
+  (sort-by #(find-thing % input-order) input-unsorted))
+
+
+#_(def order-test [:boy :tree :apple :computer :frog])
+#_(def to-be-sorted-test [:frog :apple :tree])
+#_(find-thing :apple order-test)
+#_(sort-by #(find-thing % order-test) to-be-sorted-test)
+
+;; -----------------------------------------------
+
+;; TODO: convert to test block in an appropriate test namespace
+;; (comment
+  (def test-list-empty [])
+
+  (def test-list-done-ready-new
+    [{:t-index 0, :text "b", :status :done}
+     {:t-index 1, :text "c", :status :ready}
+     {:t-index 2, :text "d", :status :new}])
+
+  ;; (invalid-menu-options {:input-list test-list-empty})
+  (def menu-opts-a (get-valid-menu-options
+                    {:input-list test-list-empty
+                     :input-menu-options menu-options-order}))
+
+  ;; (invalid-menu-options {:input-list test-list-done-ready-new})
+  (def menu-opts-b (get-valid-menu-options
+                    {:input-list test-list-done-ready-new
+                     :input-menu-options menu-options-order}))
+
+#_(do
+  menu-opts-a
+  ;; menu-opts-b
+  )
+
+  (sort-menu-options {:input-unsorted menu-opts-a
+                      :input-order menu-options-order})
+
+  (sort-menu-options {:input-unsorted menu-opts-b
+                      :input-order menu-options-order})
+
+;; )  
+
 
 (defn- gen-menu-item-string [index item-string]
   (str (inc index) ": " item-string))
@@ -177,7 +261,7 @@ done - a fully filled-in circle, brackets with an 'x' inside [x]
 ;;      keywords into strings. Instead, use the `name` function.
 (defn- gen-menu-string
   [{:keys [menu-options menu-mappings]}]
-  (s/join "\n" (map-indexed
+  (s/join NEWLINE (map-indexed
                 gen-menu-item-string
                 (map menu-mappings menu-options))))
 
@@ -185,11 +269,14 @@ done - a fully filled-in circle, brackets with an 'x' inside [x]
 ;; TODO: convert this function into a pure function by taking
 ;; in args/params instead of using global state
 (defn- cli-display-menu [menu-options-input menu-mappings]
-  (println (str "----------\n" "AutoFocus Main Menu\n" 
+  (println (str CLI-FENCE NEWLINE "AutoFocus Main Menu" NEWLINE 
                 (gen-menu-string {:menu-options menu-options-input
                                   :menu-mappings menu-mappings}))))
 
 
+;; TODO: convert this function into string generation to leave
+;; the printing responsibilities to the caller/parent function
+;; suggested new name `gen-selection-prompt-with-number-input`
 (defn- cli-ask-for-menu-input
   [options-cnt]
   (println (str
@@ -197,6 +284,7 @@ done - a fully filled-in circle, brackets with an 'x' inside [x]
             options-cnt "]: " )))
 
 
+;; TODO: relocate to application interface data namespace
 (def menu-strings-map
   {ADD "Add New To-Do Item"
    PRIORITIZE "Review and Prioritize List"
@@ -249,15 +337,20 @@ done - a fully filled-in circle, brackets with an 'x' inside [x]
 
 (defn- gen-item-count-string [input-list]
   (if (= 1 (count input-list))
-    (str "\nThere is 1 item in your list.")
-    (str "\nThere are " (count input-list) " items in your list.")))
+    (str NEWLINE "There is 1 item in your list.")
+    (str NEWLINE "There are " (count input-list) " items in your list.")))
+
+
+(def TODO-LIST-HEADER
+  (str CLI-FENCE NEWLINE "My AutoFocus To-Do List" NEWLINE))
+
 
 (defn- gen-list-render-output
   [{:keys [input-list]}]
   (if (zero? (count input-list))
-    (str "----------\n" "My AutoFocus To-Do List\n"
+    (str TODO-LIST-HEADER
          "There are no items in your to-do list currently.")
-    (str "----------\n" "My AutoFocus To-Do List\n"
+    (str TODO-LIST-HEADER 
          (l/stringify-list {:input-list input-list
                             :marks-dict d/cli-marks})
          (gen-item-count-string input-list))))

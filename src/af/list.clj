@@ -8,8 +8,12 @@
 (def list-api-design
   ;; TODO: convert these items to user stories
   "Q: What are the things that can be done with an AutoFocus list
-  at the 'list level' API?
-  - append new item to bottom of list
+  at the 'list level' *user* API?
+  - 'add': append new item to bottom of list
+  - 'prioritize': compare two items, potentially resulting in one getting marked as 'ready'
+  - 'do': take action on the 'priority item', which will result in it getting marked as 'done', and potentially also a duplicate task item being generated for further/remaining work (if there is any) on said item task
+
+Q: What are the things that are handled by the list namespace, but not directly by the user?
   - auto-mark/auto-dot first markable/dottable item (so there is
     always at least one dotted/marked item OR no markable/dottable items)
   - mark/dot item at index n (when reviewing one's list for the
@@ -42,37 +46,28 @@
 ;; values return back true from (distinct?) See: ClojureDocs: distinct?
 
 
-;; 🆙
-(defn update-list
-  ;; TODO: relocate to af.modes namespace
-  ;; TODO: implement stubs
-  ;; TODO: confirm where an index is explicitly necessary to update a to-do list
-  "A function which dispatches based on an action keyword (and is a pure function) 
-  to update a user's to-do list as a result of a new item addition, list reviewing, 
-   or list focusing. Note: This function may run more than once in order to update 
-   as needed for automarking, duplicating, or other purposes... 
-   TODO: Assess Q: Does this make the code harder to understand/read?
+;; Ideas for clear layers of abstraction/hierarchy
+#_"A pure dispatch function which dispatches based on an action keyword
+to update a user's to-do list as a result of a new item addition,
+list reviewing/prioritizing, or list focusing (ie. taking action on/doing
+an item task).
+
+Note: A separate helper dispatch function can handle things such as
+ automarking, duplicating, or other post-action actions... 
+
+DONE: Assess Q: Did the old `update-list` function make the code harder
+to understand/read? A: Yes, it did.
 
 - append new item to bottom of list[1]
-  - auto-mark/auto-dot first markable/dottable item as 'ready' (so there is always 
-   at least one dotted/marked item OR no markable/dottable items)
-  - mark/dot item as 'ready' at index n (when reviewing one's list for the purpose 
-   of comparing / prioritizing)
-  - re-mark bottom-most dotted item as 'done' after 'focus' session
+- auto-mark/auto-dot first markable/dottable item as 'ready' (so there is always 
+  at least one dotted/marked item OR no markable/dottable items)
+- mark/dot item as 'ready' at index n (when reviewing one's list for the purpose 
+  of comparing / prioritizing)
+- re-mark bottom-most dotted item as 'done' after 'focus' session
 
 [1] update-list takes a new item, to leave the item creation itself to a dedicated 
    item creation function, which in turn leaves text input to an impure IO function"
-  [{:keys [action input-list new-item-data
-           ;; target-index ;; uncomment if/when you need index data reliant behavior
-           ]}]
-  (condp = action 
-    :append-new (conj input-list (conj 
-                                  {:t-index (t-next {:target-list input-list})}
-                                  new-item-data))
-    :set-automarkable 2 ;;; TODO: implement stub
-    :set-nth-ready 3 ;;; TODO: implement stub
-    :set-focused-complete 4 ;;; TODO: implement stub
-    ))
+
 
 ;; DONE: Implement the auto-marking/auto-dotting of the first added item immediately 
 ;; after adding it
@@ -84,10 +79,12 @@
 ;; a new page)")
 
 ;; PURE FUNC
-;; TODO: refactor to use `pos` instead of `> 0`
+;; DONE: refactor to use `pos` instead of `> 0`
+;; Q: Is there a clearer/more effective idiom for `pos?-count-filter`?
 ;; 🔍 
 (defn- has-any-of-status?
-  "checks a list to see if it contains items with a given status"
+  "Predicate function which checks a list to see
+  whether it contains items of a given status."
   [{:keys [input-list input-status]}]
   (let [item-statuses (map :status input-list)]
     (pos? (count (filter #(= % input-status) item-statuses)))))
@@ -97,12 +94,13 @@
 (defn- is-auto-markable-list?
   "A list is 'auto-markable' if there are any new items and zero ready items."
   [{:keys [input-list]}]
-  (let [has-new-items?       (has-any-of-status? {:input-list input-list
-                                              :input-status :new})
-        has-ready-items?     (has-any-of-status? {:input-list input-list
-                                              :input-status :ready})
-        is-markable-list?   (and has-new-items? (not has-ready-items?))]
-    is-markable-list?))
+  (let [has-new-items?       (has-any-of-status?
+                              {:input-list input-list
+                               :input-status :new})
+        has-ready-items?     (has-any-of-status?
+                              {:input-list input-list
+                               :input-status :ready})]
+    (and has-new-items? (not has-ready-items?))))
 
 
 (comment
@@ -232,21 +230,18 @@
 ;;       only called on auto-markable lists
 ;; 🪄
 (defn- set-1st-new-item-in-list-to-ready
-  "This function always sets the topmost new item's status to 'ready'.
-  It currently performs NO checks for data validity. Therefore, this function 
-   is to be called if and only if a list is auto-markable.
-
-  Previous names: `set-topmost-new-item-in-list-to-ready!`
-                  and `set-first-new-item-to-ready`"
+  "This function *always* sets the topmost new item's status to 'ready'.
+  It currently performs NO checks for data validity, or whether or not a
+  list is 'auto-markable'. Therefore, this function is to be called if
+  and only if a list is validated to be auto-markable. Previous names:
+  `set-topmost-new-item-in-list-to-ready!`, `set-first-new-item-to-ready`"
   [{:keys [input-list]}]
-  (let [;; println debugging
-        ;; _        (println "...setting 1st new item in list to ready...")
-        new-list (set-nth-item-in-list-to-status
-                  {:input-list input-list
-                   :n-index (index-of-first-new-item-in-list 
-                             {:input-list input-list})
-                   :input-status :ready})]
-    new-list))
+  ;; println debugging
+  ;; (println "...setting 1st new item in list to ready...")
+  (set-nth-item-in-list-to-status
+   {:input-list input-list
+    :n-index (index-of-first-new-item-in-list {:input-list input-list})
+    :input-status :ready}))
 
 
 ;; 🪥
@@ -261,12 +256,11 @@
   `auto-mark-1st-markable-in-list!`, `dot-first-dottable-item`,
   `mark-first-markable-item`"
   [{:keys [input-list]}]
-  (let [;; println debugging
-        ;; _ (println "...conditionally automarking list...")
-        auto-markable (is-auto-markable-list? {:input-list input-list})]
-    (if auto-markable
-      (set-1st-new-item-in-list-to-ready {:input-list input-list})
-      input-list)))
+  ;; println debugging
+  ;; (println "...conditionally automarking list...")
+  (if (is-auto-markable-list? {:input-list input-list})
+    (set-1st-new-item-in-list-to-ready {:input-list input-list})
+    input-list))
 
 
 ;; TODO: refactor list logic so that way the update-list function is called in 
@@ -294,9 +288,12 @@
         ;;       as any other adding items to list scenarios that 
         ;;       utilize this function
         ;; note: adding new items does not require a target index bc 
-        ;; new items are always appended to the end/bottom/back of the list 
-        new-list
-        (update-list
+        ;; new items are always appended to the end/bottom/back of the list
+        item-to-be-added (conj {:t-index (t-next {:target-list target-list})} input-item) 
+
+        ;;;;
+        new-list (conj target-list item-to-be-added)
+        #_(update-list
          ;; new item "transaction" data ("tx-data")
          {:action :append-new
           :new-item-data input-item
@@ -335,25 +332,24 @@
 
 (defn filter-by-status
   [{:keys [input-list input-status]}]
-  (filter
-   #(= (:status %) input-status)
-   input-list))
+  (filter #(= (:status %) input-status) input-list))
 
 
-(defn is-focusable-list?
-  "A list is a focusable list if it contains any `:ready` items."
+(defn is-doable-list?
+  "A list is considered a doable list if it contains any `:ready` items.
+  Old name: `is-focusable-list?`"
   [{:keys [input-list]}]
   (pos? (count (filter-by-status {:input-list input-list
                                   :input-status :ready}))))
 
 
+;; TODO: test to confirm that this works for lists with no items, with one item, and with multiple items of different status, and with multiple items of same status
 (defn last-of-status-from-list
   "Returns the last element in the list with the target status.
   If no items with the target status are found, `nil` is returned."
   [{:keys [input-list target-status]}]
-  (last
-   (filter-by-status {:input-list input-list
-                      :input-status target-status})))
+  (last (filter-by-status {:input-list input-list
+                           :input-status target-status})))
 
 
 (defn conduct-focus-on-list
@@ -361,7 +357,7 @@
   ;; 1. find bottom-most dotted  (status 'ready') item
   ;; 2. update item in list  (ie. create a new list with item replaced) to have a status of 'done'
   ;; TODO: generalize last-ready-item-index to use for review comparison
-  (if (is-focusable-list? {:input-list input-list})
+  (if (is-doable-list? {:input-list input-list})
     ;; if input-list is focusable, we focus on the last ready item...
     (let [_                     (println "...focusing on list...") ;; debugging
           index-of-item-to-focus-on
@@ -376,61 +372,87 @@
         ;; after focusing on a list, we must auto-mark again, just in case that the item that was just completed was the last `:ready` item
           automarked-new-list   (conditionally-automark-list
                                  {:input-list new-list})
+          ;; TODO: disable println debugging
           _                     (println ["post-focus list will be:"
-                                          automarked-new-list])]
+                                          automarked-new-list])
+          ]
     ;;;; TODO: implement focus stub
     ;; index-of-item-to-focus-on
       automarked-new-list)
     ;; ... else, we return the list as-is
+    ;; TODO: use `print-and-return` function here
     (do
       (println "List is not focusable, returning list as-is...")
       input-list)))
 
-(conduct-focus-on-list
-   {:input-list
-    [{:t-index 0, :text "b", :status :ready}
-     {:t-index 1, :text "c", :status :new}
-     {:t-index 2, :text "d", :status :new}]})
 
 
 ;; TODO: Test that auto-marking correctly marks on the next (2nd) item added to a list that had only 1 item in it of status 'done'
 ;; TODO: Implement auto-marking that occurs after adding a new item to the list (such as the first item to the list, or the next item added after all the previous items were marked complete, or on a new page)
 ;; TODO: Experiment taking in user input via a controlled Hiccup/Reagent component
 
+
+;; TODO: search for duplicate function in af.af namespace, remove duplicate
 (defn review-question
   [{:keys [priority-item-text cursor-item-text]}]
   (str "Do you want to '" cursor-item-text 
        "' more than '" priority-item-text "'?"))
 
+
 (defn get-priority-item-from-list
   [{:keys [input-list]}]
-  (last (filter-by-status  {:input-list input-list, :input-status :ready}))) 
+  (last (filter-by-status
+         {:input-list input-list
+          :input-status :ready}))) 
 
-(defn get-first-new-item-after-index
-  "Takes an input list and input-index (likely to be a cursor-index or priority-item-index),
-   and returns back the next item index where the item has a :status of :new"
+
+;; Q: Is it possible to run out of bounds with this function?
+(defn get-first-new-item-index-after-index-x
+  "Takes an input list and input-index (likely to be a cursor-index
+  or priority-item-index), and returns back the next item index
+  where the item has a :status of :new"
   [{:keys [input-list input-index]}]
   (let [
         items-after-input-index (subvec input-list (inc input-index))
 
-        ;; filter out items of :status :new, and get the first in the list
+        ;; filter out items of :status :new, then get first in list
         next-new-item-after-index
-        (first (filter-by-status {:input-list items-after-input-index :input-status :new})) 
-        
-        ;; if there was another :status :new item, we save its :t-index, 
-        ;; otherwise, we have nil for the next-cursor
-        first-new-item-index-after 
-        (if (nil? next-new-item-after-index) nil (get next-new-item-after-index :t-index))
-        ]
-    first-new-item-index-after))
+        (first (filter-by-status {:input-list items-after-input-index
+                                  :input-status :new}))]
+    
+    ;; `first-new-item-index-after`: if another :status :new item exists
+    ;; in list, we save its :t-index. otherwise, return nil for next-cursor
+    ;; TODO: consider moving first to inside of code block to replace
+    ;; `when-not-nil?` idiom with `when-not-empty?`
+    (when (not (nil? next-new-item-after-index))
+      (get next-new-item-after-index :t-index))))
 
-(defn get-first-new-item-after-priority-item
+
+(defn get-index-of-first-new-item-after-priority-item
+  "Returns the index of the next encountered item of `:new` status
+  following priority-item. If no priority item exists, or no `:new`
+  items exist, then `nil` is returned instead."
   [{:keys [input-list]}]
-  (let [priority-item (get-priority-item-from-list {:input-list input-list})
-        priority-item-index (get priority-item :t-index) ;; 'input-index' 
-        next-new-item-index (get-first-new-item-after-index {:input-list input-list 
-                                                             :input-index priority-item-index})] 
-    next-new-item-index))
+  (let [priority-item
+        (get-priority-item-from-list {:input-list input-list})] 
+    ;; when the priority item exists
+    (when (not (nil? priority-item))
+      ;; return next-new-item-index
+      (get-first-new-item-index-after-index-x
+       {:input-list input-list
+        :input-index (get priority-item :t-index) ;; priority item index
+        }))))
+
+
+(defn is-prioritizable-list?
+  [{:keys [input-list]}]
+  ;; A prioritizable list has a priority item *and* has new items
+  ;; after the priority item --> In code, this can be abbreviated to
+  ;;     `get-first-new-item-after-priority-item` returns not nill
+    ;; 'index-of-first-prioritizable' exists
+  (not (nil? (get-index-of-first-new-item-after-priority-item
+              {:input-list input-list}))))
+
 
 (defn list-and-cursor-to-question 
   [{:keys [input-list cursor-input]}]
@@ -441,7 +463,10 @@
     (review-question {:priority-item-text priority-item-text 
                       :cursor-item-text cursor-item-text})))
 
-(def review-test-list
+
+;; TODO: move these test lists to the af.test or
+;;       af.listtest (af.list.test?) namespace
+(def review-test-list-1
   [{:t-index 0, :text "b", :status :ready}
    {:t-index 1, :text "c", :status :new}
    {:t-index 2, :text "d", :status :new}])
@@ -458,6 +483,29 @@
    {:t-index 2, :text "c", :status :new}
    {:t-index 3, :text "d", :status :new}])
 
+(def review-test-list-4
+  [{:t-index 0, :text "a", :status :ready}])
+
+(def review-test-list-5
+  [{:t-index 0, :text "a", :status :ready}
+   {:t-index 1, :text "b", :status :ready}])
+
+;; (comment
+  (conduct-focus-on-list
+   {:input-list
+    [{:t-index 0, :text "b", :status :ready}
+     {:t-index 1, :text "c", :status :new}
+     {:t-index 2, :text "d", :status :new}]})
+
+  (= (is-prioritizable-list? review-test-list-1) false)
+  (= (is-prioritizable-list? review-test-list-2) false)
+  (= (is-prioritizable-list? review-test-list-3) false)
+  (= (is-prioritizable-list? review-test-list-4) false)
+  (= (is-prioritizable-list? review-test-list-4) false)
+  (= (is-prioritizable-list? review-test-list-5) false)
+;; )
+
+
 ;; REVIEW DESIGN
 ;; A review is simply one comparison of two items in a to-do list
 ;; (the priority :ready item and one of the following :new items)
@@ -465,7 +513,10 @@
 ;; the current cursor index `:new` item status to `:ready`
 ;; Note: This will be the "parent" function that composes together 
 ;; the smaller "children" functions
-(defn create-single-review-comparison
+;; Q: What are the current responsibilities of this function?
+;; Q: How can it be broken down into smaller individual responsibilities?
+;; TODO: review `create-single-review-comparison` function for deprecation
+#_(defn create-single-review-comparison
   "[pure function] Inputs `input-list` and `review-index`:
    - `input-list` is the user's entire current to-do list
    - `review-index` is the index referring to the cursor on 
@@ -481,7 +532,7 @@
    "
   [{:keys [input-list cursor-input user-answer]}]
   (let [
-        priority-item (get-priority-item-from-list {:input-list input-list})
+        ;; priority-item (get-priority-item-from-list {:input-list input-list})
 
         ;; The cursor-index is initialized to the first `:new` item *AFTER*
         ;; the priority-item, where [THIS IS IMPORTANT] the index is of the **original** list.
@@ -489,12 +540,14 @@
         ;; Alternate names: "current-review-index", "review-cursor-index"
         ;; TODO: fix bug where the default cursor-index is set to zero, when it should be 
         ;; instead initialized to the first :new item *AFTER* the priority-item
-        cursor-index  (if (nil? cursor-input) 
-                          (get-first-new-item-after-priority-item {:input-list input-list})
-                          cursor-input)
+        ;; Q: Is an auto-cursor-index necessary and/or particularly helpful/useful?
+        cursor-index  (if (nil? cursor-input)
+                        (get-index-of-first-new-item-after-priority-item
+                         {:input-list input-list})
+                        cursor-input)
 
         ;; priority-item-index            (get priority-item :t-index)
-        priority-item-text             (get priority-item :text)
+        ;; priority-item-text             (get priority-item :text)
 
         ;; all `:new` items *AFTER* the `highest-priority-ready-item`
         ;; "the reviewables"
@@ -504,28 +557,28 @@
         ;;                                             :input-status :new})
 
         ;; Q: Is this a good use case for get-in ? TODO: tidy up this code
-        cursor-item-text (get (get input-list cursor-index) :t-index)
+        ;; cursor-item-text (get (get input-list cursor-index) :t-index)
 
-        current-question               (list-and-cursor-to-question {:input-list input-list 
-                                                                     :cursor-input cursor-index})
+        ;; current-question
+        ;; (list-and-cursor-to-question {:input-list input-list
+        ;;                               :cursor-input cursor-index})
         ;; _                           (println ["current question" current-question])
-        
+
         ;; YES CASE:
         ;; return the list back with the review index incremented by one,
         ;; and the current-new-item changed into a :ready item
 
         ;; NO CASE: return the list back with only the review index incremented by one
-        ]
-    )
-  {
-   
-   ;; scheduled changes to the list will be the yes's applied as a status change
+        ])
+  {;; scheduled changes to the list will be the yes's applied as a status change
    ;; from `:new` to `:ready` for the reviewable item in question
    ;; for example, a list of `[:ready :new :new]` will be converted to a list of
    ;; `[:ready :new :ready]` with input answers of `[:no :yes]`
    })
 
-(defn submit-individual-review
+
+;; original name: `submit-individual-review`
+(defn submit-single-comparison
   "For a given input-list, a cursor index, and an 
    answer input, a new list and cursor is generated.
    
@@ -550,6 +603,7 @@
         
         ;; if there was another :status :new item, we save its :t-index, 
         ;; otherwise, we have nil for the next-cursor
+        ;; TODO: refactor `if-nil?-nil-else` into `when?-not-nil?`
         next-cursor (if (nil? next-new-item-after-cursor)
                         nil
                         (get next-new-item-after-cursor :t-index))
@@ -565,13 +619,14 @@
                     input-list)
      :next-cursor next-cursor}))
 
+;; TODO: relocate this to an appropriate test namespace
 (every? true? [(=
    {:output-list
     [{:t-index 0 :text "b" :status :ready}
      {:t-index 1 :text "c" :status :ready}
      {:t-index 2 :text "d" :status :new}]
     :next-cursor 2}
-   (submit-individual-review {:input-list review-test-list
+   (submit-single-comparison {:input-list review-test-list-1
                               :cursor-input 1
                               :answer-input :yes}))
 
@@ -581,7 +636,7 @@
      {:t-index 1 :text "c" :status :new}
      {:t-index 2 :text "d" :status :new}]
     :next-cursor 2}
-   (submit-individual-review {:input-list review-test-list
+   (submit-single-comparison {:input-list review-test-list-1
                               :cursor-input 1
                               :answer-input :no}))
 
@@ -592,7 +647,7 @@
      {:t-index 2, :text "c", :status :done}
      {:t-index 3, :text "d", :status :new}],
     :next-cursor 3}
-   (submit-individual-review {:input-list review-test-list-2
+   (submit-single-comparison {:input-list review-test-list-2
                               :cursor-input 1
                               :answer-input :yes}))
 
@@ -613,7 +668,7 @@
      {:t-index 2, :text "c", :status :new}
      {:t-index 3, :text "d", :status :new}],
     :next-cursor 3}
-   (submit-individual-review {:input-list review-test-list-3
+   (submit-single-comparison {:input-list review-test-list-3
                               :cursor-input 2
                               :answer-input :no}))
   ])
