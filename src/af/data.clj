@@ -1,7 +1,36 @@
 (ns af.data
   ;;  "It's just data."
   ;; Domain model
-  )
+  (:require
+   [af.list :as l]
+   [clojure.set :as cs]
+   [clojure.string :as s]))
+
+(def about-texts
+  {:overview-and-summary "The AutoFocus algorithm and task management system was originally created by Mark Forster. This application was developed by Avi Drucker.
+
+The way AutoFocus works is roughly as follows:
+1. make a list by adding items to it
+2. prioritize the list as directed by the AutoFocus algorithm
+3. do the things on the list
+
+For an example of AutoFocus in action, please select 'See Real Life AutoFocus example' from the menu. For a detailed explanation of the AutoFocus algorithm, please select 'See The AutoFocus Algorithm Steps' from the menu."
+   :high-level-what-and-why "The AutoFocus algorithm helps you (1) determine what you are most ready for and wanting to do at any given time, and (2) to take a bias towards action on such tasks. Many task management systems (including to-do lists) suffer a usability issue in that they tend to get cluttered and messy, and they are easily subverted to serve procrastination. AutoFocus is designed to fight against such procrastination."
+   :detailed-steps "1. Add one or more to-do items to your list (always marking* the first 'new' item as 'ready' if there are no 'ready' items)
+2. Make a decision to either prioritize** your list, or to start taking action on the marked (ready) item, marking* items as done when you have finishing working on them, as well as re-writing to-do items at the bottom of the list if you have remaining work left to do after stopping activity on a given item.
+3. Repeat steps 1 and 2 until you reach the end of your paper or computer screen, at which point you can start a new page, transferring over any items that you have yet to do
+
+*Avi's suggested marks are, for paper and digital text respectively:
+new - an open outline circle, empty brackets [ ]
+ready - a circle with a dot in the center of it, brackets with an 'o' inside [o]
+done - a fully filled-in circle, brackets with an 'x' inside [x]
+
+** Prioritizing one's list is done by comparing the bottom-most marked as ready item (the 'priority item') with the unmarked/new items that follow it. The process is done by asking the question, 'Do I want to B more than A?' where A is the priority item and B is the unmarked/new item that comes next after A. If the answer is yes, then B gets marked as ready and becomes the new 'priority item'. If the answer is no, then we simply move on to compare A with the next unmarked/new item in the list, if it exists, skipping any items that are marked as done. This process is repeated until once for each unmarked/new item below B until there are no more unmarked/new items left to compare against the priority item."
+   :real-world-example "Let's say that you have three things that you know you need to do: 'finish trig homework', 'wash the dishes', and 'pack for tomorrow's trip'. You add these three things to your list, dotting the first item as soon as you add it to your list to mark it as 'ready'. This first dotted item is also now the 'priority item'. You can now prioritize the entire list by asking for each unmarked 'new' item, 'Do I want to do this item more than the 'priority item'?' Let's say you answer 'no' to dishes and 'yes' to packing. Your list will have dotted the first and third items, with the third item being the current priority item. Now that we've reviewed/prioritized to the bottom of the list, it is a good time to start taking action on some of the items. You do your packing, and, once you stop packing, you mark it as 'done'. Then, you ask yourself, 'Am I 100% done with this task?' Let's say in this case the answer is 'no'. Because the answer is 'no', we will add a duplicate of the third item to the bottom of the list. The final list will look like this:
+- [o] finish trig homework
+- [ ] wash the dishes
+- [x] pack for tomorrow's trip
+- [ ] pack for tomorrow's trip"})
 
 (def marks 
   {:doc-strings {:new "Items that have been added to the list, but are not necessarily yet ready to be started, internally also called: 'unmarked' or 'clean'" 
@@ -102,6 +131,10 @@
 
 (def EMPTY-STRING "")
 
+
+
+;; 2023_01_22 TIL: How to close a Vim window without quitting its associated/displayed buffer via `:q`
+(def initial-list-state [])
 
 (def EMPTY-LIST
   ;; note: this was '() originally
@@ -218,11 +251,178 @@ D17 Note: This to-do items collection was originally a hashmap, which then becam
           :notes ""}})
 
 
+;; DONE: move menu states data here
+;; TODO: reassess whether a verbose menu option is helpful and/or necessary
+;; App State Control Data
+(def menu-options-map
+  "This is a mapping between the terse and verbose menu option names."
+  {:add         :add-new-item
+   :prioritize  :prioritize-list
+   :do          :do-priority-item
+   :about       :about-autofocus
+   :example     :af-example-irl
+   :how-to      :how-to-af
+   :quit        :quit-application})
+
+
+;; Q: Is there a macro for the following 7 lines, where, instead of defining multiple defs one after the other, instead, a map or list of tuples could be passed?
+(def ADD (get menu-options-map :add))
+(def PRIORITIZE (get menu-options-map :prioritize))
+(def DO (get menu-options-map :do))
+(def ABOUT (get menu-options-map :about))
+(def EXAMPLE (get menu-options-map :example))
+(def HOW-TO (get menu-options-map :how-to))
+(def QUIT (get menu-options-map :quit))
+
+
+(def base-menu-options
+  "Note: Menu options include both AutoFocus list actions as well application actions."
+  [ADD ABOUT EXAMPLE HOW-TO QUIT])
+
+
+;; DONE: implement the sorting of the menu by custom ordering/ranking
+(def menu-options-order
+  "used to sort menu options before they are displayed"
+  [ADD PRIORITIZE DO ABOUT EXAMPLE HOW-TO QUIT])
+
+
+;; TODO: relocate to application interface data namespace
+(def menu-strings-map
+  {ADD "Add New To-Do Item"
+   PRIORITIZE "Review and Prioritize List"
+   DO "Do Priority Item"
+   ABOUT "Read About AutoFocus"
+   EXAMPLE "See Real Life AutoFocus Example"
+   HOW-TO "See The AufoFocus Algorithm Steps"
+   QUIT "Quit Application"})
+
+
+;; CLI Constants
+(def CLI-FENCE "----------")
+
+(def NEWLINE "\n")
+
+(def MAIN-MENU-HEADER
+  (str CLI-FENCE NEWLINE "AutoFocus Main Menu" NEWLINE))
+
+(def TODO-LIST-HEADER
+  (str CLI-FENCE NEWLINE "My AutoFocus To-Do List" NEWLINE))
 
 
 
+(defn gen-menu-item-string [index item-string]
+  (str (inc index) ": " item-string))
 
 
+;; TODO: refactor NEWLINE in `gen-menu-string` to instead be an input map arg
+;; 2023_01_21 TIL: The `str` function is not appropriate for converting
+;;      keywords into strings. Instead, use the `name` function.
+(defn gen-menu-string
+  [{:keys [menu-options menu-mappings]}]
+  (s/join NEWLINE (map-indexed
+                gen-menu-item-string
+                (map menu-mappings menu-options))))
+
+;; Question: How can I diff between two vectors of keywords in Clojure?
+;; TODO: implement menu options list generation dynamically based on list state
+;; TODO: refactor this funmction to take in bools `prioritizable-list?` and `doable-list?` as map arg inputs rather than as internally calculated values (ie. calc externally and pass in instead)
+(defn invalid-menu-options
+  "This is used a helper to `get-valid-menu-options` by indicating which menu options should be removed."
+  [{:keys [input-list]}]
+  (let [prioritizable-list?  (l/is-prioritizable-list?
+                              {:input-list input-list})
+        doable-list?         (l/is-doable-list?
+                              {:input-list input-list})
+        ;;_
+        #_(println ["prioritizable-list?: " prioritizable-list?
+                  "\ndoable-list?: " doable-list?])]
+    (cond
+      ;; remove nothing
+      (and prioritizable-list? doable-list?)
+      []
+
+     ;; remove prioritize
+      (and (not prioritizable-list?) doable-list?)
+      [PRIORITIZE]
+
+     ;; remove do
+      (and prioritizable-list? (not doable-list?))
+      [DO]
+
+     ;; remove both options
+      (and (not prioritizable-list?) (not doable-list?))
+      [PRIORITIZE DO])))
+
+
+
+(defn get-valid-menu-options
+  "By reviewing the input-list, this function can determine
+  which menu options should be added to the menu-options list."
+  [{:keys [input-list input-menu-options]}]
+  (vec (cs/difference ;; Q: cd/diff wouldn't work for some reason, but why?
+        (set input-menu-options)
+        (set (invalid-menu-options {:input-list input-list})))))
+
+
+;; ----------------------------------
+;; Question: How can I implement my own custom sorting order in Clojure?
+
+;; TODO: relocate to af.utils namespace
+;; source: https://stackoverflow.com/questions/4830900/how-do-i-find-the-index-of-an-item-in-a-vector
+;; native Clojure implementation of "index-of"
+(defn find-thing [needle haystack]
+  (first (keep-indexed #(when (= %2 needle) %1) haystack)))
+
+;; REPL testing
+;; (find-thing QUIT menu-options-order)
+;; (find-thing :potato menu-options-order)
+
+(defn- sort-menu-options
+  [{:keys [input-unsorted input-order]}]
+  #_(println ["...attempting to sort..."
+            "coll to be ordered: " input-unsorted
+            "correct ordering: " input-order])
+  (sort-by #(find-thing % input-order) input-unsorted))
+
+
+;; REPL testing
+#_(def order-test [:boy :tree :apple :computer :frog])
+#_(def to-be-sorted-test [:frog :apple :tree])
+#_(find-thing :apple order-test)
+#_(sort-by #(find-thing % order-test) to-be-sorted-test)
+
+;; -----------------------------------------------
+
+;; TODO: convert to test block in an appropriate test namespace
+(comment
+  (def test-list-empty [])
+
+  (def test-list-done-ready-new
+    [{:t-index 0, :text "b", :status :done}
+     {:t-index 1, :text "c", :status :ready}
+     {:t-index 2, :text "d", :status :new}])
+
+  ;; (invalid-menu-options {:input-list test-list-empty})
+  (def menu-opts-a (get-valid-menu-options
+                    {:input-list test-list-empty
+                     :input-menu-options menu-options-order}))
+
+  ;; (invalid-menu-options {:input-list test-list-done-ready-new})
+  (def menu-opts-b (get-valid-menu-options
+                    {:input-list test-list-done-ready-new
+                     :input-menu-options menu-options-order}))
+
+#_(do
+  menu-opts-a
+  ;; menu-opts-b
+  )
+
+  (sort-menu-options {:input-unsorted menu-opts-a
+                      :input-order menu-options-order})
+
+  (sort-menu-options {:input-unsorted menu-opts-b
+                      :input-order menu-options-order})
+)  
 
 
 
