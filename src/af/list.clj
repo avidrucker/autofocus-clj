@@ -352,6 +352,7 @@ to understand/read? A: Yes, it did.
                            :input-status target-status})))
 
 
+;; TODO: split this function into 2 functions, one that conducts the focus, and the other that handles the CLI I/O
 (defn conduct-focus-on-list
   [{:keys [input-list]}]
   ;; 1. find bottom-most dotted  (status 'ready') item
@@ -359,7 +360,8 @@ to understand/read? A: Yes, it did.
   ;; TODO: generalize last-ready-item-index to use for review comparison
   (if (is-doable-list? {:input-list input-list})
     ;; if input-list is focusable, we focus on the last ready item...
-    (let [_                     (println "...focusing on list...") ;; debugging
+    (let [;; TODO: save this the 'success' message
+          ;;_                     (println "...focusing on list...") ;; debugging
           index-of-item-to-focus-on
           (get (last-of-status-from-list {:input-list input-list
                                           :target-status :ready}) :t-index)
@@ -372,9 +374,8 @@ to understand/read? A: Yes, it did.
         ;; after focusing on a list, we must auto-mark again, just in case that the item that was just completed was the last `:ready` item
           automarked-new-list   (conditionally-automark-list
                                  {:input-list new-list})
-          ;; TODO: disable println debugging
-          _                     (println ["post-focus list will be:"
-                                          automarked-new-list])
+          ;; TODO: delete println debugging
+          ;;_                     (println ["post-focus list will be:" automarked-new-list])
           ]
     ;;;; TODO: implement focus stub
     ;; index-of-item-to-focus-on
@@ -382,6 +383,7 @@ to understand/read? A: Yes, it did.
     ;; ... else, we return the list as-is
     ;; TODO: use `print-and-return` function here
     (do
+      ;; TODO: save as cancel/fail confirmation text
       (println "List is not focusable, returning list as-is...")
       input-list)))
 
@@ -406,6 +408,7 @@ to understand/read? A: Yes, it did.
           :input-status :ready}))) 
 
 
+;; TODO: assess whether this is reusable for next-cursor
 ;; Q: Is it possible to run out of bounds with this function?
 (defn get-first-new-item-index-after-index-x
   "Takes an input list and input-index (likely to be a cursor-index
@@ -433,25 +436,30 @@ to understand/read? A: Yes, it did.
   following priority-item. If no priority item exists, or no `:new`
   items exist, then `nil` is returned instead."
   [{:keys [input-list]}]
-  (let [priority-item
-        (get-priority-item-from-list {:input-list input-list})] 
+  (let [;; println debugging
+        ;; _ (println "get-index-of-first-new-item-after-priority-item")
+        priority-item
+        (get-priority-item-from-list {:input-list input-list})]
     ;; when the priority item exists
     (when (not (nil? priority-item))
       ;; return next-new-item-index
-      (get-first-new-item-index-after-index-x
-       {:input-list input-list
-        :input-index (get priority-item :t-index) ;; priority item index
-        }))))
+      (do
+        ;; (println "returning something...") ;; println debugging
+        (get-first-new-item-index-after-index-x
+         {:input-list input-list
+          :input-index (get priority-item :t-index) ;; priority item index
+          })))))
 
 
+;; TODO: compare with subvec implementation in this af.list namespace for a potentially terser/more concise implementation
 (defn is-prioritizable-list?
   [{:keys [input-list]}]
   ;; A prioritizable list has a priority item *and* has new items
   ;; after the priority item --> In code, this can be abbreviated to
   ;;     `get-first-new-item-after-priority-item` returns not nill
     ;; 'index-of-first-prioritizable' exists
-  (not (nil? (get-index-of-first-new-item-after-priority-item
-              {:input-list input-list}))))
+  (number? (get-index-of-first-new-item-after-priority-item
+         {:input-list input-list})))
 
 
 (defn list-and-cursor-to-question 
@@ -497,14 +505,15 @@ to understand/read? A: Yes, it did.
      {:t-index 1, :text "c", :status :new}
      {:t-index 2, :text "d", :status :new}]})
 
-  (= (is-prioritizable-list? review-test-list-1) false)
-  (= (is-prioritizable-list? review-test-list-2) false)
-  (= (is-prioritizable-list? review-test-list-3) false)
-  (= (is-prioritizable-list? review-test-list-4) false)
-  (= (is-prioritizable-list? review-test-list-4) false)
-  (= (is-prioritizable-list? review-test-list-5) false)
+  (= (is-prioritizable-list? {:input-list review-test-list-1}) true)
+  (= (is-prioritizable-list? {:input-list review-test-list-2}) true)
+  (= (is-prioritizable-list? {:input-list review-test-list-3}) true)
+  (= (is-prioritizable-list? {:input-list review-test-list-4}) false)
+  (= (is-prioritizable-list? {:input-list review-test-list-5}) false)
+  #_(= (is-prioritizable-list? {:input-list review-test-list-2}) false)
 ;; )
 
+(get-index-of-first-new-item-after-priority-item {:input-list review-test-list-1})
 
 ;; REVIEW DESIGN
 ;; A review is simply one comparison of two items in a to-do list
@@ -576,51 +585,119 @@ to understand/read? A: Yes, it did.
    ;; `[:ready :new :ready]` with input answers of `[:no :yes]`
    })
 
+;; TODO: split this function into two separate functions:
+;;       1: can-continue-comparing?
+;;       2: calc-next-cursor
+(defn- can-continue-comparing?
+  "FOr a givben input-list and cursor-index, whether or not
+  there are remaining items to compare against is calculated."
+  [{:keys [input-list input-cursor-index]}]
+  (let [current-item-index (get-in input-list [input-cursor-index :t-index])
+        items-after-cursor (subvec input-list (inc current-item-index))]
 
+    ;; println debugging
+    #_(println ["current-item-index: " current-item-index
+              "items-after-cursor: " items-after-cursor
+              "next-new-item-after-cursor: " next-new-item-after-cursor
+              "next-cursor: " next-cursor])
+    (pos? (count (filter-by-status {:input-list items-after-cursor :input-status :new})))))
+
+;; testing whether a list can continue to be reviewed/prioritized
+(def round-test-1
+  {:input-list review-test-list-1
+   :input-cursor-index 1})
+
+(def round-test-2
+  {:input-list review-test-list-1
+   :input-cursor-index 2})
+
+(= true
+   (can-continue-comparing? round-test-1))
+(= false
+   (can-continue-comparing? round-test-2))
+
+(defn- calc-next-cursor
+  "For a given list and cursor index, in the context of a review session,
+  calculates where the next cursor position will be. If there are no valid
+  cursor positions remaining (ie. no `:new` items left to compare against),
+  then `nil` is returned."
+  [{:keys [input-list input-cursor-index]}]
+  (when (can-continue-comparing? {:input-list input-list
+                                :input-cursor-index input-cursor-index})
+    (let [items-after-cursor (subvec input-list (inc input-cursor-index))
+        ;; filter out items of :status :new, and get the first in the list
+          next-new-item-after-cursor (first (filter-by-status {:input-list items-after-cursor
+                                                               :input-status :new}))]
+        ;; if there was another :status :new item, we return its :t-index, 
+        ;; otherwise, we have nil for next-cursor
+      (get next-new-item-after-cursor :t-index)
+      )))
+
+;; testing the determinationm of the next-cursor
+(calc-next-cursor round-test-1)
+(calc-next-cursor round-test-2)
+
+;; TODO: split this function into 2: get-single-comparison, and submit-single-comparison where the first function gets a single comparison to serve to the user, whereas submit-single-comparison will 'modify' the app state with a user's choice, or end the review session and take the user back to the main menu 
 ;; original name: `submit-individual-review`
+(defn get-single-comparison
+  "For a given input-list and a cursor index, a prompt-question is generated."
+  [{:keys [input-list input-cursor-index]}]
+  (let [;; current-item (get input-list input-cursor-index)
+        ;; TODO: investigate whether or not two separate indecies are necessary/helpful (ie. `input-cursor-index` and `current-item-index`)
+        ;; current-item-index (get current-item :t-idex)
+        current-question (list-and-cursor-to-question
+                          {:input-list input-list
+                           :cursor-input input-cursor-index})]
+   ;; DONE: generate the appropriate question to return back to the user
+    current-question ;; "Do you want to...? [stub question]" 
+    ))
+
+
 (defn submit-single-comparison
-  "For a given input-list, a cursor index, and an 
-   answer input, a new list and cursor is generated.
-   
-   When answer-input is `:yes`, current-item gets marked as 
+  "When answer-input is `:yes`, current-item gets marked as 
    `:ready` (ie. a new list is returned with the item at the 
    same index as current-item having a `:ready` status)
    
    When answer-input is `:no`, we simply update the cursor index
    and return the input-list as-is"
-  [{:keys [input-list cursor-input answer-input]}]
-  (let [
-        current-item (get input-list cursor-input)
-        current-item-index (get current-item :t-index)
-        
-        ;; get the index of the next :new item
-        ;; first, get all the items after the cursor
-        items-after-cursor (subvec input-list (inc current-item-index)) 
-        
-        ;; filter out items of :status :new, and get the first in the list
-        next-new-item-after-cursor 
-        (first (filter-by-status {:input-list items-after-cursor :input-status :new}))
-        
-        ;; if there was another :status :new item, we save its :t-index, 
-        ;; otherwise, we have nil for the next-cursor
-        ;; TODO: refactor `if-nil?-nil-else` into `when?-not-nil?`
-        next-cursor (if (nil? next-new-item-after-cursor)
-                        nil
-                        (get next-new-item-after-cursor :t-index))
-        ]
-    ;; return review-map with output-list and new cursor 
-    {:output-list (if (= answer-input :yes)
-                    ;; when the answer is yes, a newly created list is returned
-                    (set-nth-item-in-list-to-status 
-                     {:input-list input-list
-                      :n-index current-item-index
-                      :input-status :ready})
+  [{:keys [input-list input-cursor-index answer-input]}]
+  {:output-list (if (= answer-input :yes)
+                  ;; when the answer is yes, a newly created list is returned
+                  (set-nth-item-in-list-to-status
+                   {:input-list input-list
+                    :n-index input-cursor-index ;; current-item-index
+                    :input-status :ready})
                     ;; else, the input-list is returned as-is
-                    input-list)
-     :next-cursor next-cursor}))
+                  input-list)
+   :next-cursor (calc-next-cursor {:input-list input-list
+                                   :input-cursor-index input-cursor-index})
+   :quitting-comparison (= answer-input :quit)})
+
+
+(comment
+  (def submit-test-1a (conj round-test-1 {:answer-input :yes}))
+  (def submit-test-1b (conj round-test-1 {:answer-input :no}))
+  (def submit-test-1c (conj round-test-1 {:answer-input :quit}))
+  
+  (def submit-test-2a (conj round-test-2 {:answer-input :yes}))
+  (def submit-test-2b (conj round-test-2 {:answer-input :no}))
+  (def submit-test-2c (conj round-test-2 {:answer-input :quit}))
+  
+  
+  (get-single-comparison round-test-1)
+  (get-single-comparison round-test-2)
+  
+  (submit-single-comparison submit-test-1a)
+  (submit-single-comparison submit-test-1b)
+  (submit-single-comparison submit-test-1c)
+  (submit-single-comparison submit-test-2a)
+  (submit-single-comparison submit-test-2b)
+  (submit-single-comparison submit-test-2c)
+  )
+
 
 ;; TODO: relocate this to an appropriate test namespace
-(every? true? [(=
+#_(every? true? [(=
    {:output-list
     [{:t-index 0 :text "b" :status :ready}
      {:t-index 1 :text "c" :status :ready}
@@ -672,3 +749,17 @@ to understand/read? A: Yes, it did.
                               :cursor-input 2
                               :answer-input :no}))
   ])
+
+
+
+;; TODO: implement this stub
+#_(defn- conduct-review-action
+  [{:keys [input-list]}]
+  (loop [current-list input-list
+         can-continue true ;; TODO: fix stub to be, if there are more `:new` items below the cursor
+         user-wishes-to-continue true ;; TODO: fix stub to be, if user has not quit early
+         ]
+    (println "Please answer 'Y' for yes, 'N' for no, or 'Q' for quit:")
+    (let [single-comparison-result (submit-single-comparison)]
+      (if (get single-comparison-result ))
+      )))

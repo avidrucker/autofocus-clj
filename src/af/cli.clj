@@ -55,6 +55,108 @@
             #_(println (str "Invalid input '" input
                           "'. Please enter a digit between " x " and " y ":"))
             (recur)))))))
+(def valid-ynq-answer-choices
+  #{"y" "Y" "q" "Q" "n" "N"})
+
+
+(defn convert-answer-letter-to-keyword
+  [input-letter]
+  (case (s/upper-case input-letter)
+    "Q" :quit
+    "Y" :yes
+    "N" :no
+    :error-code-003))
+
+
+(defn- cli-ask-yes-no-quit-question
+  [{:keys [input-question valid-answers invalid-input-response]}]
+  (loop []
+    (let [_     (println input-question)
+          input (read-line)]
+      (if (contains? valid-answers input)
+        (do
+          (println (str "Nice! You answered '" input "'!"))
+          input)
+        (do
+          (println (str "You entered '" input "'."))
+          (println invalid-input-response)
+          (recur))))))
+
+(def INVALID-YNQ-INPUT-RESPONSE
+  "That wasn't a 'y', 'n' or 'q' answer. Please try again.")
+
+(def demo-question
+ {:input-question "Do you like apples more than bananas? Please answer 'y' for 'yes', 'n' for 'no', or 'q' for 'quit: "
+  :valid-answers valid-ynq-answer-choices
+  :invalid-input-response INVALID-YNQ-INPUT-RESPONSE})
+
+;; testing the asking of a y/n/q question and then converting it to a keyword
+;; (convert-answer-letter-to-keyword (cli-ask-yes-no-quit-question demo-question))
+
+(defn cli-conduct-prioritization-review ;; get-and-submit-single-comparison
+  "original name: get-and-submit-single-comparison"
+  [{:keys [input-list input-cursor-index]}]
+  ;; 0. assuming that this list is a reviewable/prioritizable list...
+  ;; 1. ask the user, do they want to do current-item more than priority-item
+  ;; 2. take in the user's answer, where the valid answer choices are 'y', 'Y', 'q', 'Q', 'n', or 'N'
+  ;; 3. apply the user's answer to return back a result map which contains:
+  ;;    - the new list (modified if user's answer was `:yes` or unmodified otherwise)
+  ;;    - the next cursor (which may be `nil` if there are no more items to review/compare/prioritize)
+  ;;    - the user's intent to continue (`true` for `:yes` and `:no` answers, `false` if the user's answer was `:quit`) ;; `intent-to-continue`
+  (println "...starting review...")
+  (loop [current-list input-list
+         current-index input-cursor-index]
+    (let [;; get the user's answer to the comparison question
+          ;; _ (println ["list state: " current-list "cursor index: " current-index])
+          current-answer
+          (convert-answer-letter-to-keyword
+           (cli-ask-yes-no-quit-question
+            {:input-question
+             (l/get-single-comparison
+              {:input-list current-list
+               :input-cursor-index current-index})
+             :valid-answers valid-ynq-answer-choices
+             :invalid-input-response INVALID-YNQ-INPUT-RESPONSE}))
+
+          ;; get the result of submitting a comparison with user's answer 
+          submission-response   (l/submit-single-comparison {:input-list current-list
+                                                             :input-cursor-index current-index
+                                                             :answer-input current-answer})
+
+          ;; TODO: Answer the question: Is there a way to destructure the following in one line?
+          updated-list       (get submission-response :output-list)
+          updated-cursor-index      (get submission-response :next-cursor)
+          user-is-quitting?  (get submission-response :quitting-comparison)
+          ;; TODO: confirm that the next line works as desired --> It does not appear to work. Q; Why does it not work as desired? What would work as desired in this case?
+          ;; {:keys [updated-list updated-index user-is-quitting?]} submission-response
+
+          ;; `comparing?` will be our sentinel value to terminate review/prioritization sessions
+          comparing?         (and updated-cursor-index (not user-is-quitting?))]
+      (if comparing?
+        (recur updated-list updated-cursor-index)
+        updated-list))))
+
+(comment
+  (def review-test-list-1
+    [{:t-index 0, :text "apple", :status :ready}
+     {:t-index 1, :text "blueberry", :status :new}
+     {:t-index 2, :text "cherry", :status :new}])
+
+  (def round-test-1
+    {:input-list review-test-list-1
+     :input-cursor-index 1})
+
+  (cli-conduct-prioritization-review round-test-1)
+)
+
+
+;; TODO: test using this with focus/do mode, as well as to confirm and then close out the about/read-me/text-exposition sections of the application (to then return back to the menu)
+(defn- cli-press-any-key-to-continue
+  [{:keys [prompt]}]
+  (let [_ (println prompt)
+        _ (read-line)])
+  ;; TODO: replace this string with a map arg input
+  (println "Proceeding..."))
 
 
 (defn- cli-take-keyboard-input
@@ -125,26 +227,44 @@
               :invalid-input-re-request cli-invalid-input-notification-and-request
               })))) 
 
+;; TODO: relocate to af.data
+(def cli-texts
+  {:adding {:prompt "Please enter the text for your to-do item:"
+            :cancel-confirm "... cancelling adding new item to list..."
+            :success-confirm "...adding item to list..."}})
+
+
+(defn- conduct-add-action
+  [{:keys [input-list prompt cancel-confirm success-confirm]}]
+  (let [input-text (cli-quittable-get-text-from-user
+                    {:prompt prompt})]
+    (if (nil? input-text)
+      (print-and-return cancel-confirm input-list) ;; return the list as-is
+      (print-and-return
+       success-confirm ;; debugging
+       (l/add-item-to-list
+        {:input-item (i/create-new-item-data {:input-text input-text})
+         :target-list input-list})) ;; return list w/ new item appended
+      )))
+
+
+;; TODO: relocate conduct-review-action function from af.list namespace function to live here
 
 
 (defn cli-do-app-action
   [input-action input-list]
   (condp = input-action
     d/ADD
-    (let [input-text (cli-quittable-get-text-from-user
-                      {:prompt "Please enter the text for your to-do item:"})]
-      (if (nil? input-text)
-        (print-and-return "...cancelling adding new item to list..." input-list) ;; return the list as-is
-        (print-and-return
-          (println "...adding item to list...") ;; debugging
-          (l/add-item-to-list
-           {:input-item (i/create-new-item-data {:input-text input-text})
-            :target-list input-list})) ;; return list w/ new item appended
-          ))
+    (conduct-add-action  {:input-list input-list
+                          :prompt (get-in cli-texts [:adding :prompt])
+                          :cancel-confirm (get-in cli-texts [:adding :cancel-confirm])
+                          :success-confirm (get-in cli-texts [:adding :success-confirm])
+                          })
 
     d/PRIORITIZE  (print-and-return "stub for prioritizing lists" input-list)
-    d/DO          (print-and-return "stub for actioning on priority item" input-list) 
-    
+
+    d/DO          (print-and-return "stub for actioning on priority item" input-list)
+
     ;;;; overview-and-summary, detailed-steps, real-world-example
     d/ABOUT       (print-and-return (get d/about-texts :overview-and-summary) input-list)
     d/EXAMPLE     (print-and-return (get d/about-texts :real-world-example) input-list)
@@ -182,6 +302,7 @@
 (defn cli-do-app-cycle
   "A loop that runs the entire application."
   []
+  ;; TODO: relocate this string to the af.data namespace
   (println "Welcome to AutoFocus, a time management system designed by Mark Forster. Please start by creating some to-do items to add them to your list.")
   (loop [;; initialize app state
          ;; initialize the user's to-do list
@@ -191,9 +312,9 @@
           ;;_       (cli/clear)
           ;;_       (clojure.java.shell/sh "clear")
           ;;_       (r/cider-repl-clear-buffer)
-          ;;_        (println "clearing the buffer...")
-          ;;_        (println "\033[2J")
-          ;;_        (println "\033[0;0H")
+          _        (println "clearing the buffer...")
+          _        (println "\033[2J")
+          _        (println "\033[0;0H")
           
           ;; render the user's to-do list to the command line
           _       (cli-render-list (get app-state-map :the-list))
@@ -209,6 +330,8 @@
           _       (case action-input
                     ;; - [ ] Question: Why can I not use bindings instead of keyboards here in the case expression?
                     :add-new-item (println "Let's make a new item now...")
+                    :prioritize (println "Let's review the list to prioritize the items within...")
+                    :do (println "Let's focus on the priority item and start taking action on it...")
                     :about-autofocus (println "Displaying the about section...")
                     :af-example-irl (println "Displaying a real-world example of AutoFocus in action...")
                     :how-to-af (println "Displaying the how-to section...")
@@ -217,8 +340,6 @@
 
           ;; update the list based on the user's menu choice
           new-list (cli-do-app-action action-input (get app-state-map :the-list))
-          
-          _       (cli-render-list (get app-state-map :the-list))
           ]
       (if (= d/QUIT action-input)
         "Good-bye!"
