@@ -1,0 +1,18 @@
+* Scratch Pad for AutoFocus-CLJ
+
+** How to generate and display menu choices so
+they display in the order that I want them to display
+
+;; DONE: rename :input-menu-options to :all-menu-options
+;; DONE: rename menu-options-order to all-menu-options-sorted
+;; This function determins which menu options we
+have access to, given the state of the user's
+to-do list
+(get-valid-menu-options
+   {:input-list input-list
+   :all-menu-options all-menu-options-sorted}
+
+;; This sorts the menu options to the desired ordering
+(sort-menu-options
+   {:input-unsorted input-list
+    :input-order all-menu-options-sorted})
