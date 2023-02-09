@@ -58,6 +58,8 @@
 (def valid-ynq-answer-choices
   #{"y" "Y" "q" "Q" "n" "N"})
 
+(def valid-yn-answer-choices
+  #{"y" "Y" "n" "N"})
 
 (defn convert-answer-letter-to-keyword
   [input-letter]
