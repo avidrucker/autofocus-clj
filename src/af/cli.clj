@@ -73,6 +73,7 @@
     :error-code-003))
 
 
+;; TODO: rename `cli-ask-yes-no-quit-question` function to `cli-ask-question-with-limited-answer-set` communicate that it can do both quittable questions (such as y/n/q) as well as binary yes/no (y/n) questions
 (defn- cli-ask-yes-no-quit-question
   "Asks the user for an answer to a question with a limited answer set, typically one character in length for convenience/simplicity. If the consumer of this function so desires, answers may also be numbers, whole words, or strings including whitespace and punctuation, with carriage returns being the only exception for allowable answer inputs. What the program does with the answer is up to the consumer. Therefore, answers themselves have no built in semantic meaning (such as confirming, quitting, etc.), other than what the consumer communicates to the user."
   [{:keys [input-question valid-answers invalid-input-response]}]
@@ -81,9 +82,11 @@
           input (read-line)]
       (if (contains? valid-answers input)
         (do
+        ;; TODO: replace the following `do-print-return` with your custom `print-and-return` utility function
           (println (str "Nice! You answered '" input "'!"))
           input)
         (do
+        ;; TODO: if possible, replace the following `do-print-return` with your custom `print-and-return` utility function
           (println (str "You entered '" input "'."))
           (println invalid-input-response)
           (recur))))))
