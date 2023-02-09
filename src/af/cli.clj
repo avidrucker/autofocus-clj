@@ -69,6 +69,7 @@
 
 
 (defn- cli-ask-yes-no-quit-question
+  "Asks the user for an answer to a question with a limited answer set, typically one character in length for convenience/simplicity. If the consumer of this function so desires, answers may also be numbers, whole words, or strings including whitespace and punctuation, with carriage returns being the only exception for allowable answer inputs. What the program does with the answer is up to the consumer. Therefore, answers themselves have no built in semantic meaning (such as confirming, quitting, etc.), other than what the consumer communicates to the user."
   [{:keys [input-question valid-answers invalid-input-response]}]
   (loop []
     (let [_     (println input-question)
