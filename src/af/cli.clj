@@ -91,8 +91,30 @@
           (println invalid-input-response)
           (recur))))))
 
+
+;; TODO: after refactoring `cli-ask-yes-no-quit-question`, delete this function
+(defn- cli-ask-yes-no-question
+  [{:keys [input-question valid-answers invalid-input-response]}]
+  (loop []
+    (let [_     (println input-question)
+          input (read-line)]
+      (if (contains? valid-answers input)
+        ;; TODO: replace the following `do-print-return` with your custom `print-and-return` utility function
+        (do
+          (println (str "Great! You answered '" input "'!"))
+          input)
+        (do
+          (println (str "You entered '" input "'."))
+          (println invalid-input-response)
+          (recur))))))
+
+
+;; TODO: relocate string constants to af.data namespace
 (def INVALID-YNQ-INPUT-RESPONSE
   "That wasn't a 'y', 'n' or 'q' answer. Please try again.")
+
+(def INVALID-YN-INPUT-RESPONSE
+  "That wasn't a 'y' or 'n' answer. Please try again.")
 
 (def demo-question
  {:input-question "Do you like apples more than bananas? Please answer 'y' for 'yes', 'n' for 'no', or 'q' for 'quit: "
