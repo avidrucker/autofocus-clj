@@ -220,11 +220,14 @@
     (when (not user-quitted?) inputted-text)))
 
 
-
-
-
 ;; TODO: convert this function into a pure function by taking
-;; in args/params instead of using global state
+;;       in args/params instead of using global state
+;; TODO: instead of passing menu-options-input and
+;;       menu-mappings to this function, instead, pass the
+;;       result of d/gen-menu-string as the arg/param
+;; TODO: instead of directly taking 2 args, instead pass an 
+;;       arg map with keys that are named in a standard way
+;;       (matching the naming conventions in the project)
 (defn- cli-display-menu [menu-options-input menu-mappings]
   (println (str d/MAIN-MENU-HEADER 
                 (d/gen-menu-string {:menu-options menu-options-input
