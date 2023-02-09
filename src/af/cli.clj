@@ -162,7 +162,7 @@
           ;; {:keys [updated-list updated-index user-is-quitting?]} submission-response
 
           ;; `comparing?` will be our sentinel value to terminate review/prioritization sessions
-          comparing?         (and updated-cursor-index (not user-is-quitting?))]
+          comparing?         (and updated-cursor-index (not user-is-quitting?))] ;; TODO: clarify intent of code here with a comment
       (if comparing?
         (recur updated-list updated-cursor-index)
         updated-list))))
