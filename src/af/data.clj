@@ -405,12 +405,12 @@ D17 Note: This to-do items collection was originally a hashmap, which then becam
   ;; (invalid-menu-options {:input-list test-list-empty})
   (def menu-opts-a (get-valid-menu-options
                     {:input-list test-list-empty
-                     :input-menu-options menu-options-order}))
+                     :all-menu-options all-menu-options-sorted}))
 
   ;; (invalid-menu-options {:input-list test-list-done-ready-new})
   (def menu-opts-b (get-valid-menu-options
                     {:input-list test-list-done-ready-new
-                     :input-menu-options menu-options-order}))
+                     :all-menu-options all-menu-options-sorted}))
 
 #_(do
   menu-opts-a
@@ -418,10 +418,10 @@ D17 Note: This to-do items collection was originally a hashmap, which then becam
   )
 
   (sort-menu-options {:input-unsorted menu-opts-a
-                      :input-order menu-options-order})
+                      :input-order all-menu-options-sorted})
 
   (sort-menu-options {:input-unsorted menu-opts-b
-                      :input-order menu-options-order})
+                      :input-order all-menu-options-sorted})
 )  
 
 
