@@ -334,7 +334,15 @@
   (println (gen-list-render-output {:input-list input-list})))
 
 
-;; 2023_01_22 TIL: C-c C-k to evaluate an entire CIDER repl in Emacs
+;; :debug-active? DEBUG-MODE-ON
+(defn cli-clear-buffer []
+  (when DEBUG-MODE-ON
+    (println "clearing the buffer..."))
+  (println "\033[2J")
+  (println "\033[0;0H"))
+
+
+;; 2023_01_22 TIL: C-c C-k to evaluate an entire CIDER repl in Emacs in VSCode
 (defn cli-do-app-cycle
   "A loop that runs the entire application."
   []
@@ -343,13 +351,15 @@
   (loop [;; initialize app state
          ;; initialize the user's to-do list
          app-state-map {:the-list d/initial-list-state}]
-    (let [
-          ;; TODO: clear the terminal (probably right here?) for a fresh display of the list, content, and menu choices
+    (let [;; TODO: clear the terminal (probably right here?) for a 
+          ;;       fresh display of the list, content, and menu choices
+          ;; TODO: explore/experiment within different terminals / shells
+          ;;       / OS's to confirm correct screen clearing behavior
           ;;_       (cli/clear)
           ;;_       (clojure.java.shell/sh "clear")
           ;;_       (r/cider-repl-clear-buffer)
-          _        (println "clearing the buffer...")
-          _        (println "\033[2J")
+          _        (cli-clear-buffer)
+
           _        (println "\033[0;0H")
           
           ;; render the user's to-do list to the command line
