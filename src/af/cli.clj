@@ -265,18 +265,24 @@
             :success-confirm "...adding item to list..."}})
 
 
-(defn- conduct-add-action
+(defn- cli-conduct-add-action
   [{:keys [input-list prompt cancel-confirm success-confirm]}]
   (let [input-text (cli-quittable-get-text-from-user
                     {:prompt prompt})]
     (if (nil? input-text)
-      (print-and-return cancel-confirm input-list) ;; return the list as-is
-      (print-and-return
-       success-confirm ;; debugging
-       (l/add-item-to-list
+      ;; return the list as-is
+      (u/print-and-return
+       {:input-string cancel-confirm
+        :is-debug? false
+        :return-item input-list})
+      ;; return list w/ new item appended
+      (u/print-and-return
+       {:input-string success-confirm
+        :is-debug? true
+        :debug-active? DEBUG-MODE-ON
+        :return-item (l/add-item-to-list
         {:input-item (i/create-new-item-data {:input-text input-text})
-         :target-list input-list})) ;; return list w/ new item appended
-      )))
+                       :target-list input-list})}))))
 
 
 ;; TODO: relocate conduct-review-action function from af.list namespace function to live here
