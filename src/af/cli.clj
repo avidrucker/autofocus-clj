@@ -292,7 +292,12 @@
                           :success-confirm (get-in cli-texts [:adding :success-confirm])
                           })
 
-    d/PRIORITIZE  (print-and-return "stub for prioritizing lists" input-list)
+    d/PRIORITIZE
+    (cli-conduct-prioritization-review 
+     {:input-list input-list
+      :input-cursor-index
+      (l/get-index-of-first-new-item-after-priority-item 
+       {:input-list input-list})}) 
 
     d/DO          (print-and-return "stub for actioning on priority item" input-list)
 
