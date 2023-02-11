@@ -6,6 +6,7 @@
    [clojure.set :as cs]
    [clojure.string :as s]))
 
+;; TODO: find a way to abbreviate and shorten `about-texts` without losing valuable/critical meaning/context.
 (def about-texts
   {:overview-and-summary "The AutoFocus algorithm and task management system was originally created by Mark Forster. This application was developed by Avi Drucker.
 
@@ -275,14 +276,17 @@ D17 Note: This to-do items collection was originally a hashmap, which then becam
 (def QUIT (get menu-options-map :quit))
 
 
+;; TODO: IDEA: Separate the menu into two: (1) main menu for application level actions, and (2) to-do list menu for list level actions (add, prioritize, do, plus a 'return to main menu' option)
 (def base-menu-options
-  "Note: Menu options include both AutoFocus list actions as well application actions."
+  "Base menu options are available by default, and will display every time the menu is rendered. This is in contrast with situation-dependent (ie. conditional) menu options, such as PRIORITIZE and DO.
+
+  Note: Menu options include both AutoFocus list actions as well application actions."
   [ADD ABOUT EXAMPLE HOW-TO QUIT])
 
 
 ;; DONE: implement the sorting of the menu by custom ordering/ranking
-(def menu-options-order
-  "used to sort menu options before they are displayed"
+(def all-menu-options-sorted
+  "used to sort menu options before they are displayed, originally named `menu-options-order`"
   [ADD PRIORITIZE DO ABOUT EXAMPLE HOW-TO QUIT])
 
 
@@ -309,7 +313,6 @@ D17 Note: This to-do items collection was originally a hashmap, which then becam
   (str CLI-FENCE NEWLINE "My AutoFocus To-Do List" NEWLINE))
 
 
-
 (defn gen-menu-item-string [index item-string]
   (str (inc index) ": " item-string))
 
@@ -323,33 +326,25 @@ D17 Note: This to-do items collection was originally a hashmap, which then becam
                 gen-menu-item-string
                 (map menu-mappings menu-options))))
 
+
 ;; Question: How can I diff between two vectors of keywords in Clojure?
 ;; TODO: implement menu options list generation dynamically based on list state
 ;; TODO: refactor this funmction to take in bools `prioritizable-list?` and `doable-list?` as map arg inputs rather than as internally calculated values (ie. calc externally and pass in instead)
 (defn invalid-menu-options
-  "This is used a helper to `get-valid-menu-options` by indicating which menu options should be removed."
+  "This is used a helper to `get-valid-menu-options` by
+  indicating which menu options should be removed."
   [{:keys [input-list]}]
   (let [prioritizable-list?  (l/is-prioritizable-list?
                               {:input-list input-list})
         doable-list?         (l/is-doable-list?
-                              {:input-list input-list})
-        ;;_
-        #_(println ["prioritizable-list?: " prioritizable-list?
-                  "\ndoable-list?: " doable-list?])]
+                              {:input-list input-list})]
     (cond
-      ;; remove nothing
-      (and prioritizable-list? doable-list?)
-      []
-
-     ;; remove prioritize
-      (and (not prioritizable-list?) doable-list?)
-      [PRIORITIZE]
-
-     ;; remove do
-      (and prioritizable-list? (not doable-list?))
-      [DO]
-
-     ;; remove both options
+      (and prioritizable-list? doable-list?) [] ;; remove nothing
+      ;; remove prioritize
+      (and (not prioritizable-list?) doable-list?) [PRIORITIZE]
+      ;; remove do
+      (and prioritizable-list? (not doable-list?)) [DO]
+      ;; remove both options
       (and (not prioritizable-list?) (not doable-list?))
       [PRIORITIZE DO])))
 
@@ -358,9 +353,9 @@ D17 Note: This to-do items collection was originally a hashmap, which then becam
 (defn get-valid-menu-options
   "By reviewing the input-list, this function can determine
   which menu options should be added to the menu-options list."
-  [{:keys [input-list input-menu-options]}]
-  (vec (cs/difference ;; Q: cd/diff wouldn't work for some reason, but why?
-        (set input-menu-options)
+  [{:keys [input-list all-menu-options]}]
+  (vec (cs/difference ;; Q: clojure.data/diff wouldn't work for some reason, but why?
+        (set all-menu-options)
         (set (invalid-menu-options {:input-list input-list})))))
 
 
@@ -377,7 +372,7 @@ D17 Note: This to-do items collection was originally a hashmap, which then becam
 ;; (find-thing QUIT menu-options-order)
 ;; (find-thing :potato menu-options-order)
 
-(defn- sort-menu-options
+(defn sort-menu-options
   [{:keys [input-unsorted input-order]}]
   #_(println ["...attempting to sort..."
             "coll to be ordered: " input-unsorted
