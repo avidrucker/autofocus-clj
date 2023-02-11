@@ -363,7 +363,22 @@
           _        (println "\033[0;0H")
           
           ;; render the user's to-do list to the command line
-          _       (cli-render-list (get app-state-map :the-list))
+
+          current-menu (vec (d/sort-menu-options
+                             {:input-unsorted
+                              (d/get-valid-menu-options
+                               {:input-list current-list
+                                :all-menu-options d/all-menu-options-sorted})
+                              :input-order d/all-menu-options-sorted}))
+
+          ;; println debugging
+          ;; _           (println ["current menu: " current-menu])
+          ;; _           (println ["d/menu-strings-map: " d/menu-strings-map])
+
+          ;; DONE: update args here to instead of being `base-menu-options`, 
+          ;; to dynamically adjust as different actions become available due to 
+          ;; app/list state (such as prioritizing or doing), and to not rely on 
+          ;; global bindings but rather passed in arguments/parameters
 
           ;;;; TODO: update the arg here to instead of being `base-menu-options`, to dynamically adjust as different actions become available due to app/list state (such as prioritizing or doing), and to not rely on global bindings but rather passed in arguments/parameters
           ;; display the menu and get user's menu choice
