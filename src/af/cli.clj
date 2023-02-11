@@ -7,6 +7,10 @@
    ;; [clojure.repl :as r]
    ))
 
+;; TODO: implement 'debug mode' which toggles on/off println debugging
+;; TODO: confirm that 'debug mode' works as desired 
+(def DEBUG-MODE-ON true)
+
 ;; TODO: pass this to `cli-get-number-in-range-inclusive`
 ;; TODO: refactor cli functions to not directly call data items such as NEWLINE or CLI-FENCE
 (defn- cli-choice-confirm [input]
