@@ -299,7 +299,11 @@
       (l/get-index-of-first-new-item-after-priority-item 
        {:input-list input-list})}) 
 
-    d/DO          (print-and-return "stub for actioning on priority item" input-list)
+    ;; TODO: implement the yes/no question asking after a user is done 
+    ;; focusing/actioning of 'Is there work remaining on this task/item?'
+    ;; TODO: implement the 'press any key' or 'press the ENTER key' to continue
+    d/DO
+    (l/conduct-focus-on-list {:input-list input-list})
 
     ;;;; overview-and-summary, detailed-steps, real-world-example
     d/ABOUT       (print-and-return (get d/about-texts :overview-and-summary) input-list)
