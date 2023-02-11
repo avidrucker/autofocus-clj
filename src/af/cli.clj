@@ -27,13 +27,6 @@
                 "Please enter a digit between " x " and " y ":")))
 
 
-;; TODO: relocate this to af.utils namespace
-(defn print-and-return
-  "Potentially useful as a debugging function, also useful for cases where printing to the console before returning a value is desired."
-  [input-string return-item]
-  (println input-string) return-item)
-
-
 ;; TODO: refactor this function so that its contents know nothing about menus, choices, nor does it decide its own printout messages, instead, it takes in print out messages as functions and passes to them the appropriate arguments, for example `if-cli-choice-confirm-exists-then-print-with-input-arg`, and so on for `cli-input-confirm`, `cli-invalid-input-detected, etc.`
 (defn- cli-get-number-in-range-inclusive
   "Gets a number ranging from x to y (inclusive) from the user via keyboard input and stdin. Optionally takes a map from which to direct the printing out of prompts and confirmations."
