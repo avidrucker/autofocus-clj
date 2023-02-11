@@ -1,5 +1,18 @@
 (ns af.utils)
 
+(defn print-and-return
+  "Potentially useful as a debugging function, also useful for cases where printing to the console before returning a value is desired."
+  [{:keys [input-string return-item is-debug? debug-active?]}]
+  (cond
+    ;; print debug statements when debugging is activated
+    (and is-debug? debug-active?)
+    (println input-string)
+
+    ;; print anything that isn't a debug statement
+    (not is-debug?)
+    (println input-string))
+  return-item)
+
 (defn non-neg-int?
   "returns true if a number is an integer AND is 0 or greater
 
