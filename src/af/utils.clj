@@ -66,13 +66,12 @@ Note: This function appears to fail on positive decimal numbers that are equival
    ;; TODO: relocate to utils namespace
     "returns true if a number if between a min and a max, inclusive"
     [{:keys [valid-floor valid-max input-n]}]
-    (do
-      (println "starting sugar: in-bounds-inclusive?")
+    ;; TODO: test removing `if-true-false` after regression tests have been made to compare results, refactor as desired
     ;; TODO: investigate if kondo-clj would find  (if x true false) to be an 'anti-pattern' or 'redundant'
     ;; #_(and (>= input-n valid-floor) (<= input-n valid-max))
-      (if (and (>= input-n valid-floor) (<= input-n valid-max))
-        true
-        false)))
+    (if (and (>= input-n valid-floor) (<= input-n valid-max))
+      true
+      false))
 
 
 #_(true?
@@ -88,7 +87,7 @@ Note: This function appears to fail on positive decimal numbers that are equival
 ;; TODO: Inspect demo list to confirm it starts out empty
 ;; Q!: What is the current snapshot value of the current list?
 ;; Q!: What is the "live-cam" reactive display of the current list?
-(comment
-  maria.user/list-1
-  maria.user/demo-list-1
-)
+;; (comment
+;;   maria.user/list-1
+;;   maria.user/demo-list-1
+;; )
