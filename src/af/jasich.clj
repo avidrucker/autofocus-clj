@@ -1,4 +1,4 @@
-(ns autofocus-sketch-nov-11-2022.jasich)
+(ns af.jasich)
 
 (in-ns 'jasich.scroll)
 ;; custom smooth-scroll scrollIntoView script by GitHub user "jasich"
