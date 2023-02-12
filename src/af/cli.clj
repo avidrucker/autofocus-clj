@@ -1,5 +1,6 @@
 (ns af.cli
   (:require
+   [af.utils :as u]
    [af.data :as d]
    [af.list :as l]
    [af.item :as i]
@@ -17,10 +18,10 @@
   (println (str "You selected choice #" input "." d/NEWLINE d/CLI-FENCE)))
 
 #_(defn- cli-input-confirm [input]
-  (println (str "You inputted '" input "'. Thank you for the valid input!")))
+    (println (str "You inputted '" input "'. Thank you for the valid input!")))
 
 #_(defn- cli-invalid-input-detected [input]
-  (println (str "Invalid input '" input "' entered.")))
+    (println (str "Invalid input '" input "' entered.")))
 
 (defn- cli-invalid-input-notification-and-request [input x y]
   (println (str "Invalid input '" input "' entered. "
@@ -42,7 +43,7 @@
             ;; DONE: replace literal string hyphen/dash fences with def binding
             (choice-confirm-func input)
             #_(println (str "You selected choice #" input "."
-                          d/NEWLINE d/CLI-FENCE))
+                            d/NEWLINE d/CLI-FENCE))
             ;; (println (str "You inputted '" input
             ;;               "'. Thank you for the valid input!"))
             (Integer/parseInt input))
@@ -50,7 +51,7 @@
             ;; TODO: split the following printout into 2 separate printouts
             (invalid-input-re-request input x y)
             #_(println (str "Invalid input '" input
-                          "'. Please enter a digit between " x " and " y ":"))
+                            "'. Please enter a digit between " x " and " y ":"))
             (recur)))))))
 
 
@@ -78,10 +79,9 @@
     (let [_     (println input-question)
           input (read-line)]
       (if (contains? valid-answers input)
-        (do
-        ;; TODO: replace the following `do-print-return` with your custom `print-and-return` utility function
-          (println (str "Nice! You answered '" input "'!"))
-          input)
+        (u/print-and-return {:input-string (str "Nice! You answered '" input "'!")
+                             :is-debug? false
+                             :return-value input})
         (do
         ;; TODO: if possible, replace the following `do-print-return` with your custom `print-and-return` utility function
           (println (str "You entered '" input "'."))
@@ -113,13 +113,15 @@
 (def INVALID-YN-INPUT-RESPONSE
   "That wasn't a 'y' or 'n' answer. Please try again.")
 
+;; TODO: relocate to af.demo namespace
 (def demo-question
- {:input-question "Do you like apples more than bananas? Please answer 'y' for 'yes', 'n' for 'no', or 'q' for 'quit: "
-  :valid-answers valid-ynq-answer-choices
-  :invalid-input-response INVALID-YNQ-INPUT-RESPONSE})
+  {:input-question "Do you like apples more than bananas? Please answer 'y' for 'yes', 'n' for 'no', or 'q' for 'quit: "
+   :valid-answers valid-ynq-answer-choices
+   :invalid-input-response INVALID-YNQ-INPUT-RESPONSE})
 
 ;; testing the asking of a y/n/q question and then converting it to a keyword
 ;; (convert-answer-letter-to-keyword (cli-ask-yes-no-quit-question demo-question))
+
 
 (defn cli-conduct-prioritization-review ;; get-and-submit-single-comparison
   "original name: get-and-submit-single-comparison"
@@ -131,7 +133,7 @@
   ;;    - the new list (modified if user's answer was `:yes` or unmodified otherwise)
   ;;    - the next cursor (which may be `nil` if there are no more items to review/compare/prioritize)
   ;;    - the user's intent to continue (`true` for `:yes` and `:no` answers, `false` if the user's answer was `:quit`) ;; `intent-to-continue`
-  (println "...starting review...")
+  (println "...starting review...") ;; TODO: convert to custom debug statement (when DEBUG-MODE-ON ...)
   (loop [current-list input-list
          current-index input-cursor-index]
     (let [;; get the user's answer to the comparison question
@@ -162,7 +164,12 @@
           comparing?         (and updated-cursor-index (not user-is-quitting?))] ;; TODO: clarify intent of code here with a comment
       (if comparing?
         (recur updated-list updated-cursor-index)
-        updated-list))))
+        (u/print-and-return
+         ;; TODO: move this string to af.data
+         {:input-string "... ending review ..."
+          :is-debug? false
+          :return-value updated-list})))))
+
 
 (comment
   (def review-test-list-1
@@ -196,7 +203,10 @@
       (println prompt))
     (let [input (read-line)]
       (if (and (not (nil? input)) (seq input))
-        (print-and-return (str "You entered '" input "'.") input)
+        (u/print-and-return {:input-string (str "You entered '" input "'.")
+                             :is-debug? false
+                             :return-item input})
+        ;; TODO: see if using `print-and-return` works here with recur as the `:return-item`
         (do
           (println (str "Input of '" input
                         "' does not appear to be valid."))
@@ -226,9 +236,9 @@
 ;;       arg map with keys that are named in a standard way
 ;;       (matching the naming conventions in the project)
 (defn- cli-display-menu [menu-options-input menu-mappings]
-  (println (str d/MAIN-MENU-HEADER 
+  (println (str d/MAIN-MENU-HEADER
                 (d/gen-menu-string {:menu-options menu-options-input
-                                  :menu-mappings menu-mappings}))))
+                                    :menu-mappings menu-mappings}))))
 
 
 ;; TODO: convert this function into string generation to leave
@@ -238,25 +248,33 @@
   [options-cnt]
   (println (str
             "Please make a selection from the above menu [1-"
-            options-cnt "]: " )))
+            options-cnt "]: ")))
+
+;; TODO: create a custom debug macro that takes in a collection of bindings/names/symbols,
+;;       and adds each one into a single println statement as follows:
+;;       (println ["binding-1-name: " binding-1-value
+;;                 "binding-2-name: " binding-2-value
+;;                 ...])
 
 
 ;; TODO: convert into pure func by taking in args, not global state
 (defn cli-do-menu-cycle
   "display the menu and get user's menu choice"
-  [{:keys [input-menu
-           input-menu-strings-map
-           input-base-menu-options]}] 
-  (cli-display-menu input-menu input-menu-strings-map) ;; base-menu-options 
-  (cli-ask-for-menu-input (count input-menu))
-  (get input-base-menu-options
+  [{:keys [input-menu ;; TODO: note here that this is a list of keywords
+           input-menu-strings-map]}]
+  (let [menu-length (count input-menu)
+        ;;_      (println ["menu length: " menu-length]) ;; println debugging
+        ]
+    (cli-display-menu input-menu input-menu-strings-map)
+    (cli-ask-for-menu-input menu-length)
+    (get input-menu
        ;; TODO: refactor cli-get-number-in-range-inclusive call signature to have clearer inputs
-       (dec (cli-get-number-in-range-inclusive
-             1
-             (count input-menu)
-             {:choice-confirm-func cli-choice-confirm
-              :invalid-input-re-request cli-invalid-input-notification-and-request
-              })))) 
+         (dec (cli-get-number-in-range-inclusive
+               1
+               menu-length
+               {:choice-confirm-func cli-choice-confirm
+                :invalid-input-re-request cli-invalid-input-notification-and-request})))))
+
 
 ;; TODO: relocate to af.data
 (def cli-texts
@@ -281,7 +299,7 @@
         :is-debug? true
         :debug-active? DEBUG-MODE-ON
         :return-item (l/add-item-to-list
-        {:input-item (i/create-new-item-data {:input-text input-text})
+                      {:input-item (i/create-new-item-data {:input-text input-text})
                        :target-list input-list})}))))
 
 
@@ -292,18 +310,18 @@
   [input-action input-list]
   (condp = input-action
     d/ADD
-    (conduct-add-action  {:input-list input-list
-                          :prompt (get-in cli-texts [:adding :prompt])
-                          :cancel-confirm (get-in cli-texts [:adding :cancel-confirm])
-                          :success-confirm (get-in cli-texts [:adding :success-confirm])
-                          })
+    (cli-conduct-add-action
+     {:input-list input-list
+      :prompt (get-in cli-texts [:adding :prompt])
+      :cancel-confirm (get-in cli-texts [:adding :cancel-confirm])
+      :success-confirm (get-in cli-texts [:adding :success-confirm])})
 
     d/PRIORITIZE
-    (cli-conduct-prioritization-review 
+    (cli-conduct-prioritization-review
      {:input-list input-list
       :input-cursor-index
-      (l/get-index-of-first-new-item-after-priority-item 
-       {:input-list input-list})}) 
+      (l/get-index-of-first-new-item-after-priority-item
+       {:input-list input-list})})
 
     ;; TODO: implement the yes/no question asking after a user is done 
     ;; focusing/actioning of 'Is there work remaining on this task/item?'
@@ -312,14 +330,28 @@
     (l/conduct-focus-on-list {:input-list input-list})
 
     ;;;; overview-and-summary, detailed-steps, real-world-example
-    d/ABOUT       (print-and-return (get d/about-texts :overview-and-summary) input-list)
-    d/EXAMPLE     (print-and-return (get d/about-texts :real-world-example) input-list)
-    d/HOW-TO      (print-and-return (get d/about-texts :detailed-steps) input-list)
-    ;; TODO: implement serialization logic so that, upon quitting, the user has their list autosaved to disk
+    d/ABOUT       (u/print-and-return
+                   {:input-string (get d/about-texts :overview-and-summary)
+                    :is-debug? false
+                    :return-item input-list})
+
+    d/EXAMPLE     (u/print-and-return
+                   {:input-string (get d/about-texts :real-world-example)
+                    :is-debug? false
+                    :return-item input-list})
+
+    d/HOW-TO      (u/print-and-return
+                   {:input-string (get d/about-texts :detailed-steps)
+                    :is-debug? false
+                    :return-item input-list})
+
+    ;; TODO: relocate quit confirmation string to af.data under `application-text` binding/name
+    ;; TODO: implement serialization logic so that, upon quitting, 
+    ;;       the user has their list autosaved to disk
     d/QUIT (println "Confirming 'quit' action...")
 
     ;; default/else condition/case
-    (println "Invalid action detected, error code 0002.")))
+    (println "Invalid action detected, error code 002.")))
 
 
 (defn- gen-item-count-string [input-list]
@@ -333,7 +365,7 @@
   (if (zero? (count input-list))
     (str d/TODO-LIST-HEADER
          "There are no items in your to-do list currently.")
-    (str d/TODO-LIST-HEADER 
+    (str d/TODO-LIST-HEADER
          (l/stringify-list {:input-list input-list
                             :marks-dict d/cli-marks})
          (gen-item-count-string input-list))))
@@ -370,9 +402,10 @@
           ;;_       (r/cider-repl-clear-buffer)
           _        (cli-clear-buffer)
 
-          _        (println "\033[0;0H")
-          
+          current-list (get app-state-map :the-list)
+
           ;; render the user's to-do list to the command line
+          _       (cli-render-list current-list)
 
           current-menu (vec (d/sort-menu-options
                              {:input-unsorted
@@ -390,19 +423,26 @@
           ;; app/list state (such as prioritizing or doing), and to not rely on 
           ;; global bindings but rather passed in arguments/parameters
 
-          ;;;; TODO: update the arg here to instead of being `base-menu-options`, to dynamically adjust as different actions become available due to app/list state (such as prioritizing or doing), and to not rely on global bindings but rather passed in arguments/parameters
           ;; display the menu and get user's menu choice
           action-input (cli-do-menu-cycle
-                        {:input-menu d/base-menu-options ;; TODO: modify this line in order to take in different menu options depending on the list state
+                        {:input-menu current-menu ;; d/base-menu-options ;;;; TODO: modify this line in order to take in different menu options depending on the list state
                          :input-menu-strings-map d/menu-strings-map
-                         :input-base-menu-options d/base-menu-options})
-          
+                         ;;;; TODO: test to see if input-base-menu-options is necessary here
+                         ;; :input-base-menu-options d/base-menu-options
+                         })
+
+          ;; println debugging
+          ;; _       (println ["action-input: " action-input])
+
           ;; println debugging
           _       (case action-input
                     ;; - [ ] Question: Why can I not use bindings instead of keyboards here in the case expression?
+                    ;;         - Answer: I think that it *is* the case that you can use bindings here. The particular 
+                    ;;           behavior of your bindings not appearing to work may be due to the fact that you were 
+                    ;;           using the "shorted"/"abbreviated" keywords, rather than the extended/full ones.
                     :add-new-item (println "Let's make a new item now...")
-                    :prioritize (println "Let's review the list to prioritize the items within...")
-                    :do (println "Let's focus on the priority item and start taking action on it...")
+                    :prioritize-list (println "Let's review the list to prioritize the items within...")
+                    :do-priority-item (println "Let's focus on the priority item and start taking action on it...")
                     :about-autofocus (println "Displaying the about section...")
                     :af-example-irl (println "Displaying a real-world example of AutoFocus in action...")
                     :how-to-af (println "Displaying the how-to section...")
@@ -410,9 +450,20 @@
                     :default (println "Unknown action entered, error code 0001."))
 
           ;; update the list based on the user's menu choice
-          new-list (cli-do-app-action action-input (get app-state-map :the-list))
-          ]
+          new-list (cli-do-app-action action-input current-list)]
       (if (= d/QUIT action-input)
-        "Good-bye!"
+        (println "Good-bye!") ;; TODO: relocate this string to af.data namespace
         (recur
          {:the-list new-list})))))
+
+
+;; Examples of `print-and-return`
+;; (print-and-return
+;;  {:input-string "stub for actioning on priority item"
+;;   :is-debug? true
+;;   :debug-active? DEBUG-MODE-ON
+;;   :return-item input-list})
+
+;;  {:input-string cancel-confirm
+;;   :is-debug? false
+;;   :return-item input-list}
