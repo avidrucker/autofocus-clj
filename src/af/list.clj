@@ -750,16 +750,3 @@ to understand/read? A: Yes, it did.
                               :answer-input :no}))
   ])
 
-
-
-;; TODO: implement this stub
-#_(defn- conduct-review-action
-  [{:keys [input-list]}]
-  (loop [current-list input-list
-         can-continue true ;; TODO: fix stub to be, if there are more `:new` items below the cursor
-         user-wishes-to-continue true ;; TODO: fix stub to be, if user has not quit early
-         ]
-    (println "Please answer 'Y' for yes, 'N' for no, or 'Q' for quit:")
-    (let [single-comparison-result (submit-single-comparison)]
-      (if (get single-comparison-result ))
-      )))
