@@ -442,13 +442,15 @@ to understand/read? A: Yes, it did.
         (get-priority-item-from-list {:input-list input-list})]
     ;; when the priority item exists
     (when (not (nil? priority-item))
-      ;; return next-new-item-index
-      (do
-        ;; (println "returning something...") ;; println debugging
-        (get-first-new-item-index-after-index-x
-         {:input-list input-list
-          :input-index (get priority-item :t-index) ;; priority item index
-          })))))
+      ;; return next-new-item-index 
+        (u/print-and-return 
+         {:input-string "returning something..."
+          :is-debug? true
+          :return-value
+          (get-first-new-item-index-after-index-x
+           {:input-list input-list
+            :input-index (get priority-item :t-index) ;; priority item index
+            })}))))
 
 
 ;; TODO: compare with subvec implementation in this af.list namespace for a potentially terser/more concise implementation
