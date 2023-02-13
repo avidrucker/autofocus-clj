@@ -81,7 +81,7 @@
       (if (contains? valid-answers input)
         (u/print-and-return {:input-string (str "Nice! You answered '" input "'!")
                              :is-debug? false
-                             :return-value input})
+                             :return-item input})
         (do
         ;; TODO: if possible, replace the following `do-print-return` with your custom `print-and-return` utility function
           (println (str "You entered '" input "'."))
@@ -168,7 +168,7 @@
          ;; TODO: move this string to af.data
          {:input-string "... ending review ..."
           :is-debug? false
-          :return-value updated-list})))))
+          :return-item updated-list})))))
 
 
 (comment
