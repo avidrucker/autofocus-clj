@@ -478,7 +478,8 @@
           ;; update the list based on the user's menu choice
           new-list (cli-do-app-action action-input current-list)]
       (if (= d/QUIT action-input)
-        (println "Good-bye!") ;; TODO: relocate this string to af.data namespace
+        ;; TODO: relocate this string to af.data namespace
+        (println "Thank you for using AutoFocus!")
         (recur
          {:the-list new-list})))))
 
