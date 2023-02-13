@@ -485,14 +485,3 @@
         (recur
          {:the-list new-list})))))
 
-
-;; Examples of `print-and-return`
-;; (print-and-return
-;;  {:input-string "stub for actioning on priority item"
-;;   :is-debug? true
-;;   :debug-active? DEBUG-MODE-ON
-;;   :return-item input-list})
-
-;;  {:input-string cancel-confirm
-;;   :is-debug? false
-;;   :return-item input-list}
