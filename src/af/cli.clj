@@ -452,15 +452,6 @@
                                 :all-menu-options d/all-menu-options-sorted})
                               :input-order d/all-menu-options-sorted}))
 
-          ;; println debugging
-          ;; _           (println ["current menu: " current-menu])
-          ;; _           (println ["d/menu-strings-map: " d/menu-strings-map])
-
-          ;; DONE: update args here to instead of being `base-menu-options`, 
-          ;; to dynamically adjust as different actions become available due to 
-          ;; app/list state (such as prioritizing or doing), and to not rely on 
-          ;; global bindings but rather passed in arguments/parameters
-
           ;; display the menu and get user's menu choice
           action-input (cli-do-menu-cycle
                         {:input-menu current-menu ;; d/base-menu-options ;;;; TODO: modify this line in order to take in different menu options depending on the list state
@@ -468,9 +459,6 @@
                          ;;;; TODO: test to see if input-base-menu-options is necessary here
                          ;; :input-base-menu-options d/base-menu-options
                          })
-
-          ;; println debugging
-          ;; _       (println ["action-input: " action-input])
 
           ;; println debugging
           _       (case action-input
