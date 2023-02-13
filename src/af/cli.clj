@@ -185,8 +185,10 @@
 )
 
 
-;; TODO: test using this with focus/do mode, as well as to confirm and then close out the about/read-me/text-exposition sections of the application (to then return back to the menu)
-(defn- cli-press-any-key-to-continue
+;; DONE: test using this with focus/do mode, as well as to confirm 
+;; and then close out the about/read-me/text-exposition sections of 
+;; the application (to then return back to the menu)
+(defn- cli-press-enter-key-to-continue
   [{:keys [prompt]}]
   (let [_ (println prompt)
         _ (read-line)])
