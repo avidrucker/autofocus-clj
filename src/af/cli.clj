@@ -303,7 +303,51 @@
                        :target-list input-list})}))))
 
 
-;; TODO: relocate conduct-review-action function from af.list namespace function to live here
+
+
+(defn print-wait-on-enter-key-then-return 
+  [{:keys [output-text continue-prompt return-item is-debug? debug-active?]}]
+  (let [result (u/print-and-return
+                {:input-string output-text
+                 :is-debug? is-debug?
+                 :debug-active? debug-active?
+                 :return-item return-item})]
+    (cli-press-enter-key-to-continue
+     {:prompt continue-prompt})
+    result
+    )
+  )
+
+
+(def RETURN-TO-MAIN-MENU-STRING "Please press the ENTER key to return to the main menu.")
+
+
+(defn print-text-section-and-return-to-menu
+  [{:keys [input-list section-text]}] 
+    (cli-clear-buffer)
+    (print-wait-on-enter-key-then-return
+     {:continue-prompt RETURN-TO-MAIN-MENU-STRING
+      :output-text (str section-text d/NEWLINE d/CLI-FENCE)
+      :is-debug? false
+      :return-item input-list}))
+
+
+(defn cli-conduct-focus-action
+  [{:keys [input-list]}]
+  (let [result (l/conduct-focus-on-list {:input-list input-list})
+        priority-item-text (get (l/get-priority-item-from-list {:input-list input-list}) :text)]
+    (cli-clear-buffer)
+    (println "----------") ;; TODO: replace magic texts with af.data constants
+    (println "Focus Mode")
+    (println (str "You are currently taking action on '" priority-item-text "'..."))
+    (cli-press-enter-key-to-continue
+     {:prompt "Once you have stopped working on this task, press ENTER to continue."})
+      ;; TODO: Ask the user here if there is any remaining work left (yes/no question):
+      ;;       - If yes, on top of marking the priority item as done, duplicate the 
+      ;;       priority item and append it to the list.
+    (println "Marking the priority item as done...")
+    result)
+  )
 
 
 (defn cli-do-app-action
