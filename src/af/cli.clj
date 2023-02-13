@@ -326,24 +326,20 @@
     ;; TODO: implement the yes/no question asking after a user is done 
     ;; focusing/actioning of 'Is there work remaining on this task/item?'
     ;; TODO: implement the 'press any key' or 'press the ENTER key' to continue
-    d/DO
-    (l/conduct-focus-on-list {:input-list input-list})
+    d/DO (cli-conduct-focus-action {:input-list input-list})
 
     ;;;; overview-and-summary, detailed-steps, real-world-example
-    d/ABOUT       (u/print-and-return
-                   {:input-string (get d/about-texts :overview-and-summary)
-                    :is-debug? false
-                    :return-item input-list})
+    d/ABOUT       (print-text-section-and-return-to-menu 
+                   {:input-list input-list
+                    :section-text (get d/about-texts :overview-and-summary)})
 
-    d/EXAMPLE     (u/print-and-return
-                   {:input-string (get d/about-texts :real-world-example)
-                    :is-debug? false
-                    :return-item input-list})
+    d/EXAMPLE     (print-text-section-and-return-to-menu
+                   {:input-list input-list
+                    :section-text (get d/about-texts :real-world-example)}) 
 
-    d/HOW-TO      (u/print-and-return
-                   {:input-string (get d/about-texts :detailed-steps)
-                    :is-debug? false
-                    :return-item input-list})
+    d/HOW-TO      (print-text-section-and-return-to-menu
+                   {:input-list input-list
+                    :section-text (get d/about-texts :detailed-steps)})
 
     ;; TODO: relocate quit confirmation string to af.data under `application-text` binding/name
     ;; TODO: implement serialization logic so that, upon quitting, 
