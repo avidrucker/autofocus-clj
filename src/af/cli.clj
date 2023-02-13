@@ -303,6 +303,12 @@
                        :target-list input-list})}))))
 
 
+;; :debug-active? DEBUG-MODE-ON
+(defn cli-clear-buffer []
+  (when DEBUG-MODE-ON
+    (println "clearing the buffer..."))
+  (println "\033[2J")
+  (println "\033[0;0H"))
 
 
 (defn print-wait-on-enter-key-then-return 
@@ -414,14 +420,6 @@
 ;; TODO: evaluate this function as a canditate for including in public API
 (defn cli-render-list [input-list]
   (println (gen-list-render-output {:input-list input-list})))
-
-
-;; :debug-active? DEBUG-MODE-ON
-(defn cli-clear-buffer []
-  (when DEBUG-MODE-ON
-    (println "clearing the buffer..."))
-  (println "\033[2J")
-  (println "\033[0;0H"))
 
 
 ;; 2023_01_22 TIL: C-c C-k to evaluate an entire CIDER repl in Emacs in VSCode
