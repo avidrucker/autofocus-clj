@@ -10,7 +10,7 @@
 
 ;; TODO: implement 'debug mode' which toggles on/off println debugging
 ;; TODO: confirm that 'debug mode' works as desired 
-(def DEBUG-MODE-ON true)
+(def DEBUG-MODE-ON false)
 
 ;; TODO: pass this to `cli-get-number-in-range-inclusive`
 ;; TODO: refactor cli functions to not directly call data items such as NEWLINE or CLI-FENCE
@@ -191,7 +191,7 @@
   (let [_ (println prompt)
         _ (read-line)])
   ;; TODO: replace this string with a map arg input
-  (println "Proceeding..."))
+  (when DEBUG-MODE-ON (println "Proceeding...")))
 
 
 (defn- cli-take-keyboard-input
@@ -394,7 +394,7 @@
     ;; TODO: relocate quit confirmation string to af.data under `application-text` binding/name
     ;; TODO: implement serialization logic so that, upon quitting, 
     ;;       the user has their list autosaved to disk
-    d/QUIT (println "Confirming 'quit' action...")
+    d/QUIT (when DEBUG-MODE-ON (println "Confirming 'quit' action..."))
 
     ;; default/else condition/case
     (println "Invalid action detected, error code 002.")))
