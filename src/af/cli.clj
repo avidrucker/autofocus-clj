@@ -326,7 +326,8 @@
 (defn cli-conduct-focus-action
   [{:keys [input-list]}]
   (let [result (l/conduct-focus-on-list {:input-list input-list})
-        priority-item-text (get (l/get-priority-item-from-list {:input-list input-list}) :text)]
+        priority-item (l/get-priority-item-from-list {:input-list input-list})
+        priority-item-text (get priority-item :text)]
     (cli-clear-buffer)
     (println "----------") ;; TODO: replace magic texts with af.data constants
     (println "Focus Mode")
@@ -335,10 +336,23 @@
      {:prompt "Once you have stopped working on this task, press ENTER to continue."})
       ;; TODO: Ask the user here if there is any remaining work left (yes/no question):
       ;;       - If yes, on top of marking the priority item as done, duplicate the 
-      ;;       priority item and append it to the list.
-    (println "Marking the priority item as done...")
-    result)
-  )
+    ;;       priority item and append it to the list.
+    (let [work-remaining
+          (= :yes
+             (cli-ask-question-with-limited-answer-set
+              {:input-question
+               "Is there work remaining to be done on '"
+               priority-item-text "'? (answer Y for yes, N for no): "
+               :valid-answers valid-yn-answer-choices
+               :invalid-input-response
+               "Please type Y or N to answer 'yes' or 'no', and then hit the ENTER key."}))]
+      (if work-remaining
+        (u/print-and-return {:input-string "Duplicating priority item...\nMarking the priority item as done..."
+                             :is-debug? false
+                             :return-item (l/add-item-to-list {:input-item (i/gen-duplicate-item priority-item) :target-list result})
+                             })
+        
+        (u/print-and-return {:input-string "Marking the priority item as done..." :is-debug? false :return-item result})))))
 
 
 (defn cli-do-app-action
