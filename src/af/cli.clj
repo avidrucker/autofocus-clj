@@ -12,10 +12,13 @@
 ;; TODO: confirm that 'debug mode' works as desired 
 (def DEBUG-MODE-ON false)
 
-;; TODO: pass this to `cli-get-number-in-range-inclusive`
-;; TODO: refactor cli functions to not directly call data items such as NEWLINE or CLI-FENCE
+(defn- gen-choice-confirm-string [input newline fence]
+  (str "You selected choice #" input "." newline fence))
+
+;; TODO: write down why this is not a good idea: 'pass this to `cli-get-number-in-range-inclusive`'
+;; TODO: refactor cli functions to not directly call data items such as NEWLINE or CLI-FENCE, instead, write functions that move NEWLINE and CLI-FENCE to be sibling level functions under a shared parent function, for example (defn- cli-choice-confirm (gen-choice-confirm-str NEWLINe CLI-FENCE))
 (defn- cli-choice-confirm [input]
-  (println (str "You selected choice #" input "." d/NEWLINE d/CLI-FENCE)))
+  (println (gen-choice-confirm-string input d/NEWLINE d/CLI-FENCE)))
 
 #_(defn- cli-input-confirm [input]
     (println (str "You inputted '" input "'. Thank you for the valid input!")))
