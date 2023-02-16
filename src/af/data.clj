@@ -6,6 +6,10 @@
    [clojure.set :as cs]
    [clojure.string :as s]))
 
+
+(def DEBUG-MODE-ON false)
+
+
 ;; TODO: find a way to abbreviate and shorten `about-texts` without losing valuable/critical meaning/context.
 (def about-texts
   {:overview-and-summary "The AutoFocus algorithm and task management system was originally created by Mark Forster. This application was developed by Avi Drucker.
@@ -16,8 +20,8 @@ The way AutoFocus works is roughly as follows:
 3. do the things on the list
 
 For an example of AutoFocus in action, please select 'See Real Life AutoFocus example' from the menu. For a detailed explanation of the AutoFocus algorithm, please select 'See The AutoFocus Algorithm Steps' from the menu."
-   :high-level-what-and-why "The AutoFocus algorithm helps you (1) determine what you are most ready for and wanting to do at any given time, and (2) to take a bias towards action on such tasks. Many task management systems (including to-do lists) suffer a usability issue in that they tend to get cluttered and messy, and they are easily subverted to serve procrastination. AutoFocus is designed to fight against such procrastination."
-   :detailed-steps "1. Add one or more to-do items to your list (always marking* the first 'new' item as 'ready' if there are no 'ready' items)
+   :high-level-what-and-why "The AutoFocus algorithm helps you (1) determine what you are most ready for and wanting to do at any given time, and (2) to take a bias towards action on such tasks. Many task management systems (including paper to-do lists) suffer a usability issue in that they tend to get cluttered and messy, and they are easily subverted to serve procrastination. AutoFocus is designed to fight against such procrastination."
+   :detailed-steps "1. Add one or more to-do items to your list (always marking* the first 'new' item as 'ready' if and only if there are no 'ready' items)
 2. Make a decision to either prioritize** your list, or to start taking action on the marked (ready) item, marking* items as done when you have finishing working on them, as well as re-writing to-do items at the bottom of the list if you have remaining work left to do after stopping activity on a given item.
 3. Repeat steps 1 and 2 until you reach the end of your paper or computer screen, at which point you can start a new page, transferring over any items that you have yet to do
 
@@ -337,7 +341,13 @@ D17 Note: This to-do items collection was originally a hashmap, which then becam
   (let [prioritizable-list?  (l/is-prioritizable-list?
                               {:input-list input-list})
         doable-list?         (l/is-doable-list?
-                              {:input-list input-list})]
+                              {:input-list input-list})
+        ;; _                    (when DEBUG-MODE-ON (println ["----------"
+        ;;                                "\nprioritizable-list?: " prioritizable-list?
+        ;;                                "\ndoable-list?: " doable-list?
+        ;;                                "\ninput-list: " input-list
+        ;;                                "\n----------"]))
+        ]
     (cond
       (and prioritizable-list? doable-list?) [] ;; remove nothing
       ;; remove prioritize
@@ -354,9 +364,14 @@ D17 Note: This to-do items collection was originally a hashmap, which then becam
   "By reviewing the input-list, this function can determine
   which menu options should be added to the menu-options list."
   [{:keys [input-list all-menu-options]}]
-  (vec (cs/difference ;; Q: clojure.data/diff wouldn't work for some reason, but why?
+  (when DEBUG-MODE-ON (println "getting valid menu option..."))
+  (let [result (vec (cs/difference ;; Q: clojure.data/diff wouldn't work for some reason, but why?
         (set all-menu-options)
-        (set (invalid-menu-options {:input-list input-list})))))
+        (set (invalid-menu-options {:input-list input-list}))))]
+    ;; (when DEBUG-MODE-ON (println ["options result: " result
+    ;;           "\nall menu options: " all-menu-options
+    ;;           "\ninput list: " input-list]))
+    result))
 
 
 ;; ----------------------------------
