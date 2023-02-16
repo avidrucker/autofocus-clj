@@ -31,6 +31,8 @@
    - for any given day which items were completed in that day.
    - how long it took for X items to go from creation to completion")
 
+
+;; TODO: update this function to use `update` instead of `assoc`
 ;; ✅
 (defn set-item-to-status
   ;; note: this was originally called `set-item-ready!-2`
@@ -42,6 +44,7 @@
   is used to update :new items to :ready, and :ready items to :done"
   [{:keys [input-item input-status]}]
   (assoc input-item :status input-status))
+
 
 ;; ❌
 (defn- item-mark  
@@ -56,15 +59,13 @@
   [{:keys [item dict]}]
   ((get item :status) dict))
 
-;; TODO: refactor to remove this function, as it does not decrease cognitive load
-;; 📛
-(defn- item-text
-  "Helper function meant to simplify reading cognitive burdern."
-  [todo-item]
-  (get todo-item :text))
-
 
 ;; TODO: Move design notes out of doc-string into either a markdown cell or, perhaps, design-notes hashmap 
+;; TODO: modify stringify item to handle duplicate items by 
+;; conditionally appending text as follows, an example for an item 
+;; with the text `go for jog` that has been duplicated twice will 
+;; be rendered as `go for jog (dup #2)` and an item that is not a 
+;; duplicate will render as `go for jog`
 ;; 🔤
 (defn stringify-item
   "Converts an item map into a printable list-item string
@@ -77,20 +78,26 @@
   than locking the function into any fixed number of arguments
   (i.e. this technique avoids PLOP)"
   [{:keys [item dict]}] ;; :as input-data ;; (item-mark input-data)
-  (str "- [" (item-mark {:item item :dict dict}) "] " (item-text item)))
+  (str "- [" (item-mark {:item item :dict dict}) "] " (get item :text)))
+
+
+;; TODO: Test create-new-item function w/ just task text input where
+;; the output item data status is expected to be "ready" (because this
+;; is the first item being added to a list)
 
 ;; TODO: Test create-new-item function w/ just task text input where
 ;; the output item data status is expected to be "new" (because there
 ;; are already marked items in this list, and this item to be added
 ;; will not end up being 'auto-marked' as ready)
 
-;; TODO: Test create-new-item function w/ just task text input where
-;; the output item data status is expected to be "ready" (because this
-;; is the first item being added to a list)
-
 ;; TODO: Test create-new-item function w/ dup item to confirm that
-;; both have the same text, and that a new key `:is-dup-of` (with
-;; value `t-index-of-original` (has been added to dup item 
+;; their base text is the same, and that a new key `:dup-number` has
+;; been added to dup item
+
+
+;; IDEA: add `:t-original` key-val pair to duplicate items to indicate
+;; which item is the original
+
 
 ;; 🆕
 (defn create-new-item-data
