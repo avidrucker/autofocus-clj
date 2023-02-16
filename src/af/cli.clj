@@ -5,11 +5,10 @@
    [af.list :as l]
    [af.item :as i]
    [clojure.string :as s]
-   ;; [clojure.repl :as r]
    ))
 
-;; TODO: implement 'debug mode' which toggles on/off println debugging
-;; TODO: confirm that 'debug mode' works as desired 
+;; DONE: implement 'debug mode' which toggles on/off println debugging
+;; DONE: confirm that 'debug mode' works as desired 
 (def DEBUG-MODE-ON false)
 
 (defn- gen-choice-confirm-string [input newline fence]
@@ -31,6 +30,7 @@
                 "Please enter a digit between " x " and " y ":")))
 
 
+;; TODO: rename invalid-input-re-request arg key so that it is clear from its name that it is a function 
 ;; TODO: refactor this function so that its contents know nothing about menus, choices, nor does it decide its own printout messages, instead, it takes in print out messages as functions and passes to them the appropriate arguments, for example `if-cli-choice-confirm-exists-then-print-with-input-arg`, and so on for `cli-input-confirm`, `cli-invalid-input-detected, etc.`
 (defn- cli-get-number-in-range-inclusive
   "Gets a number ranging from x to y (inclusive) from the user via keyboard input and stdin. Optionally takes a map from which to direct the printing out of prompts and confirmations."
@@ -45,16 +45,10 @@
           (do
             ;; DONE: replace literal string hyphen/dash fences with def binding
             (choice-confirm-func input)
-            #_(println (str "You selected choice #" input "."
-                            d/NEWLINE d/CLI-FENCE))
-            ;; (println (str "You inputted '" input
-            ;;               "'. Thank you for the valid input!"))
             (Integer/parseInt input))
           (do
             ;; TODO: split the following printout into 2 separate printouts
             (invalid-input-re-request input x y)
-            #_(println (str "Invalid input '" input
-                            "'. Please enter a digit between " x " and " y ":"))
             (recur)))))))
 
 
@@ -75,8 +69,11 @@
 
 
 ;; TODO: rename `cli-ask-yes-no-quit-question` function to `cli-ask-question-with-limited-answer-set` communicate that it can do both quittable questions (such as y/n/q) as well as binary yes/no (y/n) questions
-(defn- cli-ask-yes-no-quit-question
-  "Asks the user for an answer to a question with a limited answer set, typically one character in length for convenience/simplicity. If the consumer of this function so desires, answers may also be numbers, whole words, or strings including whitespace and punctuation, with carriage returns being the only exception for allowable answer inputs. What the program does with the answer is up to the consumer. Therefore, answers themselves have no built in semantic meaning (such as confirming, quitting, etc.), other than what the consumer communicates to the user."
+(defn- cli-ask-question-with-limited-answer-set
+  "Asks the user for an answer to a question with a limited answer set, typically one character in length for convenience/simplicity. If the consumer of this function so desires, answers may also be numbers, whole words, or strings including whitespace and punctuation, with carriage returns being the only exception for allowable answer inputs. What the program does with the answer is up to the consumer. Therefore, answers themselves have no built in semantic meaning (such as confirming, quitting, etc.), other than what the consumer communicates to the user.
+
+  Example questions may include yes/no questions, yes/no/quit, or to make a selection from a list/set of menu choice options.
+  "
   [{:keys [input-question valid-answers invalid-input-response]}]
   (loop []
     (let [_     (println input-question)
@@ -87,23 +84,6 @@
                              :return-item input})
         (do
         ;; TODO: if possible, replace the following `do-print-return` with your custom `print-and-return` utility function
-          (println (str "You entered '" input "'."))
-          (println invalid-input-response)
-          (recur))))))
-
-
-;; TODO: after refactoring `cli-ask-yes-no-quit-question`, delete this function
-(defn- cli-ask-yes-no-question
-  [{:keys [input-question valid-answers invalid-input-response]}]
-  (loop []
-    (let [_     (println input-question)
-          input (read-line)]
-      (if (contains? valid-answers input)
-        ;; TODO: replace the following `do-print-return` with your custom `print-and-return` utility function
-        (do
-          (println (str "Great! You answered '" input "'!"))
-          input)
-        (do
           (println (str "You entered '" input "'."))
           (println invalid-input-response)
           (recur))))))
@@ -143,7 +123,7 @@
           ;; _ (println ["list state: " current-list "cursor index: " current-index])
           current-answer
           (convert-answer-letter-to-keyword
-           (cli-ask-yes-no-quit-question
+           (cli-ask-question-with-limited-answer-set
             {:input-question
              (l/get-single-comparison
               {:input-list current-list
