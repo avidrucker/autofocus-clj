@@ -116,3 +116,32 @@
   [{:keys [input-text input-status]}]
   {:text input-text
    :status (if input-status input-status :new)})
+
+
+(defn is-duplicate?
+  "if `dup-number` key is found on an item, it is a duplicate item"
+  [{:keys [input-item]}]
+  (some? (get input-item :dup-number)))
+
+
+(defn gen-duplicate-item
+  "generates a duplicate of the inputted item. Items can be originals or
+  duplicates, and duplicates can be duplicated 1 or more times.
+
+  Note: This function uses `is-duplicate?` for the conditional duplication logic"
+  [{:keys [input-item]}]
+  ;; use `dup-number` key-val to indicate the duplicate number, 
+  ;; starting with 1 to indicate an item has been duplicated once
+  (if (is-duplicate? {:input-item input-item})
+    (update input-item :dup-number inc)
+    (assoc input-item :dup-number 1)))
+
+
+;; BAD IDEA: implement `duplicate-item` with optional append that also looks for a certain sequence of
+;;           characters, for example: 'go for jog', once stopped, can be duplicated to create
+;;           'go for jog (dup #1)', with the duplicates of the duplicate being 'go for jog (dup #2)',
+;;           'go for jog (dup #3)', etc.. --> This is a bad idea because it uses both string
+;;           programming and PLOP (place oriented programming) where a keyword and boolean flag would
+;;           suffice, and also mixes domains/concerns, where the desired end result is to be able to
+;;           tell if an item is a duplicate visually (rendered to the user), as well as programmatically
+;;           (via code by the program/programmer).
