@@ -5,6 +5,9 @@
    [clojure.string :as s]))
 
 
+(def DEBUG-MODE-ON false)
+
+
 (def list-api-design
   ;; TODO: convert these items to user stories
   "Q: What are the things that can be done with an AutoFocus list
@@ -421,16 +424,28 @@ to understand/read? A: Yes, it did.
         ;; filter out items of :status :new, then get first in list
         next-new-item-after-index
         (first (filter-by-status {:input-list items-after-input-index
-                                  :input-status :new}))]
+                                  :input-status :new}))
+        
+        result (when (some? next-new-item-after-index)
+                 (get next-new-item-after-index :t-index))
+        
+        _      (when DEBUG-MODE-ON (println
+                            "**********"
+                                    "\n!!! next-new-item-after-index:"
+                                    "\nindex #: " input-index
+                                    "\nitem: " next-new-item-after-index
+                                    "\nresult: " result
+                                    "\n**********")) 
+        ]
     
     ;; `first-new-item-index-after`: if another :status :new item exists
     ;; in list, we save its :t-index. otherwise, return nil for next-cursor
     ;; TODO: consider moving first to inside of code block to replace
     ;; `when-not-nil?` idiom with `when-not-empty?`
-    (when (not (nil? next-new-item-after-index))
-      (get next-new-item-after-index :t-index))))
+    result))
 
 
+;;;; TODO: resolve bug where prioritizable lists are not correctly recognized as such
 (defn get-index-of-first-new-item-after-priority-item
   "Returns the index of the next encountered item of `:new` status
   following priority-item. If no priority item exists, or no `:new`
@@ -439,20 +454,30 @@ to understand/read? A: Yes, it did.
   (let [;; println debugging
         ;; _ (println "get-index-of-first-new-item-after-priority-item")
         priority-item
-        (get-priority-item-from-list {:input-list input-list})]
-    ;; when the priority item exists
-    (when (not (nil? priority-item))
-      ;; return next-new-item-index 
-        (u/print-and-return 
-         {:input-string "returning something..."
-          :is-debug? true
-          :return-value
-          (get-first-new-item-index-after-index-x
-           {:input-list input-list
-            :input-index (get priority-item :t-index) ;; priority item index
-            })}))))
+        (get-priority-item-from-list {:input-list input-list})
+
+        result ;; when the priority item exists
+        (when (some? priority-item)
+          ;; return next-new-item-index 
+          (u/print-and-return
+           {:input-string "returning something..."
+            :is-debug? true
+            :debug-active? DEBUG-MODE-ON
+            :return-item
+            (get-first-new-item-index-after-index-x
+             {:input-list input-list
+              :input-index (get priority-item :t-index) ;; priority item index
+              })}))
+        
+        ;; _ (when DEBUG-MODE-ON (println ["$$$$$"
+        ;;                                 "\n!!!!! priority item: " priority-item
+        ;;                                 "\n!!!!! index result: " result
+        ;;                                 "\n$$$$$"]))
+        ]
+    result))
 
 
+;;;; TODO: fix bug where prioritizable lists are not correctly recognized as such
 ;; TODO: compare with subvec implementation in this af.list namespace for a potentially terser/more concise implementation
 (defn is-prioritizable-list?
   [{:keys [input-list]}]
@@ -460,8 +485,26 @@ to understand/read? A: Yes, it did.
   ;; after the priority item --> In code, this can be abbreviated to
   ;;     `get-first-new-item-after-priority-item` returns not nill
     ;; 'index-of-first-prioritizable' exists
-  (number? (get-index-of-first-new-item-after-priority-item
-         {:input-list input-list})))
+  ;; (not (nil? (get-index-of-first-new-item-after-priority-item {:input-list input-list})))
+  (let [has-priority-item? (not (nil? (get-priority-item-from-list
+                            {:input-list input-list})))
+
+        index-result (when has-priority-item? 
+                       (get-index-of-first-new-item-after-priority-item
+                        {:input-list input-list}))
+        
+        has-new-item-after-priority-item?
+        (some? index-result)
+        
+        ;; println debugging
+        _        (when DEBUG-MODE-ON (println ["=========="
+                           "\n!* has-priority-item?: " has-priority-item?
+                           "\n!* index-result: " index-result
+                           "\n!* has-new-item-after-priority-item?: " has-new-item-after-priority-item?
+                           "\n=========="]))
+        ]
+    ((every-pred true?) has-priority-item? has-new-item-after-priority-item?)
+    ))
 
 
 (defn list-and-cursor-to-question 
@@ -663,14 +706,19 @@ to understand/read? A: Yes, it did.
    When answer-input is `:no`, we simply update the cursor index
    and return the input-list as-is"
   [{:keys [input-list input-cursor-index answer-input]}]
-  {:output-list (if (= answer-input :yes)
-                  ;; when the answer is yes, a newly created list is returned
-                  (set-nth-item-in-list-to-status
-                   {:input-list input-list
-                    :n-index input-cursor-index ;; current-item-index
-                    :input-status :ready})
-                    ;; else, the input-list is returned as-is
-                  input-list)
+  {:output-list 
+   (if (= answer-input :yes)
+     ;; when the answer is yes, a newly created list is returned
+     (u/print-and-return
+      {:input-string "... marking current item as 'ready' ..."
+       :is-debug? false
+       :return-item
+       (set-nth-item-in-list-to-status
+        {:input-list input-list
+         :n-index input-cursor-index ;; current-item-index
+         :input-status :ready})})
+     ;; else, the input-list is returned as-is
+     input-list)
    :next-cursor (calc-next-cursor {:input-list input-list
                                    :input-cursor-index input-cursor-index})
    :quitting-comparison (= answer-input :quit)})
