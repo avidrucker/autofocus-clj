@@ -32,5 +32,5 @@
   ;;   (if (or (= input "yes") (= input "no"))
   ;;     (println "Thanks for your input")
   ;;     (println "Invalid input. Please enter either 'yes' or 'no'")))
-  (cli/cli-do-app-cycle))
+  (cli/cli-do-app-cycles))
 

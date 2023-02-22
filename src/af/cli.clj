@@ -428,13 +428,12 @@
 
 
 ;; 2023_01_22 TIL: C-c C-k to evaluate an entire CIDER repl in Emacs in VSCode
-(defn cli-do-app-cycle
+(defn cli-do-app-cycles
   "A loop that runs the entire application."
   []
-  ;; TODO: relocate this string to the af.data namespace
-  (println "Welcome to AutoFocus, a time management system designed by Mark Forster. Please start by creating some to-do items to add them to your list.")
   (loop [;; initialize app state
          ;; initialize the user's to-do list
+         t-time 0
          app-state-map {:the-list d/initial-list-state}]
     (let [;; TODO: clear the terminal (probably right here?) for a 
           ;;       fresh display of the list, content, and menu choices
@@ -446,6 +445,11 @@
           ;; TODO: learn how to clear the REPL buffer programmatically
           ;;       from within a program running in the REPL
           _        (cli-clear-buffer)
+
+          _        (when (zero? t-time)
+                     ;; TODO: relocate this string to the af.data namespace
+                     (println d/WELCOME-MESSAGE 
+                              ))
 
           current-list (get app-state-map :the-list)
 
@@ -486,5 +490,6 @@
         ;; TODO: relocate this string to af.data namespace
         (println "Thank you for using AutoFocus!")
         (recur
+         (inc t-time)
          {:the-list new-list})))))
 

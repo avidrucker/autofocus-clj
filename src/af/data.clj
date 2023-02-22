@@ -5,6 +5,8 @@
   ;; TODO: review namespace for data spec candidates
   )
 
+(def WELCOME-MESSAGE
+  "Welcome to AutoFocus, a time management system designed by Mark Forster.\nPlease start by creating some to-do items to add them to your list.")
 
 ;; TODO: find a way to abbreviate and shorten `about-texts` without losing valuable/critical meaning/context.
 (def about-texts
@@ -86,7 +88,7 @@ done - a fully filled-in circle, brackets with an 'x' inside [x]
   ;;TODO: assess which strings are needed only for console (command line) app
   {:done-focusing "Once you finish focusing on this task, tap the enter key." ;; next button on mobile
    :skipping-review "Skipping review (list is not reviewable)..." ;; console log
-   :empty-list "There are no items in your to-do list." ;; empty state msg to user !!!
+   :empty-list "> There are no items in your to-do list." ;; empty state msg to user !!!
    :make-menu-selection "Please make a menu selection." ;; CLI user prompt !!!
    :automarking-first-markable "Auto-marking first markable item..." ;; console log
    :cant-automark "Unable to auto-mark. Returning list as is..." ;; console log
