@@ -106,38 +106,36 @@ to understand/read? A: Yes, it did.
     (and has-new-items? (not has-ready-items?))))
 
 
-(comment
-  ;; TODO: convert this comment block into a test block
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; REPL driven development testing
-  (true?
-   (is-auto-markable-list? {:input-list  
-                            [{:t-index 0, :text "a", :status :new}]}))
+;; (comment
+;;   ;; TODO: convert this comment block into a test block
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;; REPL driven development testing
+;;   (true?
+;;    (is-auto-markable-list? {:input-list  
+;;                             [{:t-index 0, :text "a", :status :new}]}))
 
-  #_(filter #(= (:status %) :new) [{:text "z" :status :new}])
-  (println "---------------------")
+;;   #_(filter #(= (:status %) :new) [{:text "z" :status :new}])
+;;   (println "---------------------")
 
-  (false? (is-auto-markable-list? {:input-list
-                                  [{:t-index 0, :text "b", :status :ready}
-                                   {:t-index 1, :text "c", :status :new}
-                                   {:t-index 2, :text "d", :status :new}]}
-                                 ))
+;;   (false? (is-auto-markable-list?
+;;            {:input-list
+;;             [{:t-index 0, :text "b", :status :ready}
+;;              {:t-index 1, :text "c", :status :new}
+;;              {:t-index 2, :text "d", :status :new}]}))
 
-  (false? (is-auto-markable-list?
-           {:input-list
-            [{:t-index 0, :text "e", :status :done}
-             {:t-index 1, :text "f", :status :ready}
-             {:t-index 2, :text "g", :status :ready}]
-            }
-           ))
+;;   (false? (is-auto-markable-list?
+;;            {:input-list
+;;             [{:t-index 0, :text "e", :status :done}
+;;              {:t-index 1, :text "f", :status :ready}
+;;              {:t-index 2, :text "g", :status :ready}]}))
 
-  (true? (is-auto-markable-list? {:input-list
-                                 [{:t-index 0, :text "h", :status :done}
-                                  {:t-index 1, :text "i", :status :done}
-                                  {:t-index 2, :text "j", :status :new}]}))
-;; TESTING END
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  )
+;;   (true? (is-auto-markable-list? {:input-list
+;;                                  [{:t-index 0, :text "h", :status :done}
+;;                                   {:t-index 1, :text "i", :status :done}
+;;                                   {:t-index 2, :text "j", :status :new}]}))
+;; ;; TESTING END
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;   )
 
 
 ;; 1️⃣
@@ -283,7 +281,8 @@ to understand/read? A: Yes, it did.
   Work-In-Progress language: 'transacts' (on?) the to-do items collection 
    'database' (i.e. the to-do list)"
   [{:keys [input-item target-list]}]
-  (let [;; TODO: disable println debugging
+  (let [;; TODO: convert plain println debugging to
+        ;;       custom debugger (when DEBUG-MODE-ON ...)
         ;; _  (println "...adding item to list...") ;; debugging
 
         ;; TODO: double-check that setting this here is appropriate and 
@@ -294,27 +293,11 @@ to understand/read? A: Yes, it did.
         ;; new items are always appended to the end/bottom/back of the list
         item-to-be-added (conj {:t-index (t-next {:target-list target-list})} input-item) 
 
-        ;;;;
         new-list (conj target-list item-to-be-added)
-        #_(update-list
-         ;; new item "transaction" data ("tx-data")
-         {:action :append-new
-          :new-item-data input-item
-          :input-list target-list})
-
-        ;; TODO: disable println debugging
-        ;; _ (println ["new list with newly added item: " new-list])
-        ;; _ (println ["new list is auto-markable: "
-        ;;            (auto-markable-list?-2 new-list)])
 
         ;; note: it would be incorrect to call set-topmost-new-item here bc new items aren't guarenteed to be automarkable
         auto-marked-new-list
-        (conditionally-automark-list {:input-list new-list})
-
-        ;; println debugging
-        ;; _ (println ["auto-marked new-list: " auto-marked-new-list])
-        ]
-
+        (conditionally-automark-list {:input-list new-list})]
     (vec auto-marked-new-list)))
 
 
@@ -338,6 +321,7 @@ to understand/read? A: Yes, it did.
   (filter #(= (:status %) input-status) input-list))
 
 
+;; TODO: refactor code so that is-doable-list? can become private to this namespace
 (defn is-doable-list?
   "A list is considered a doable list if it contains any `:ready` items.
   Old name: `is-focusable-list?`"
@@ -377,8 +361,6 @@ to understand/read? A: Yes, it did.
         ;; after focusing on a list, we must auto-mark again, just in case that the item that was just completed was the last `:ready` item
           automarked-new-list   (conditionally-automark-list
                                  {:input-list new-list})
-          ;; TODO: delete println debugging
-          ;;_                     (println ["post-focus list will be:" automarked-new-list])
           ]
     ;;;; TODO: implement focus stub
     ;; index-of-item-to-focus-on
@@ -386,6 +368,7 @@ to understand/read? A: Yes, it did.
     ;; ... else, we return the list as-is
     ;; TODO: use `print-and-return` function here
     (do
+      ;; TODO: instead of printing here, return a map with a result and a response message, optionally with a `:success` status
       ;; TODO: save as cancel/fail confirmation text
       (println "List is not focusable, returning list as-is...")
       input-list)))
@@ -404,6 +387,8 @@ to understand/read? A: Yes, it did.
        "' more than '" priority-item-text "'?"))
 
 
+;; TODO: refactor codebase to replace (not (nil?)) idiom with (some?)
+;; TODO: refactor usage of this function to make it private (see cli.clj line 329)
 (defn get-priority-item-from-list
   [{:keys [input-list]}]
   (last (filter-by-status
@@ -445,35 +430,28 @@ to understand/read? A: Yes, it did.
     result))
 
 
-;;;; TODO: resolve bug where prioritizable lists are not correctly recognized as such
+;; TODO: attempt to make this function private by refactoring out usage from cli.clj line 372
+;; DONE: resolve bug where prioritizable lists are not correctly recognized as such
 (defn get-index-of-first-new-item-after-priority-item
   "Returns the index of the next encountered item of `:new` status
   following priority-item. If no priority item exists, or no `:new`
   items exist, then `nil` is returned instead."
   [{:keys [input-list]}]
-  (let [;; println debugging
-        ;; _ (println "get-index-of-first-new-item-after-priority-item")
-        priority-item
+  (let [priority-item
         (get-priority-item-from-list {:input-list input-list})
 
         result ;; when the priority item exists
         (when (some? priority-item)
           ;; return next-new-item-index 
           (u/print-and-return
-           {:input-string "returning something..."
+           {:input-string "returning index of first new item after priority item..."
             :is-debug? true
             :debug-active? DEBUG-MODE-ON
             :return-item
             (get-first-new-item-index-after-index-x
              {:input-list input-list
               :input-index (get priority-item :t-index) ;; priority item index
-              })}))
-        
-        ;; _ (when DEBUG-MODE-ON (println ["$$$$$"
-        ;;                                 "\n!!!!! priority item: " priority-item
-        ;;                                 "\n!!!!! index result: " result
-        ;;                                 "\n$$$$$"]))
-        ]
+              })}))]
     result))
 
 
