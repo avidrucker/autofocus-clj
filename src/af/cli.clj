@@ -2,6 +2,7 @@
   (:require
    [af.utils :as u]
    [af.data :as d]
+   [af.calc :as calc]
    [af.list :as l]
    [af.item :as i]
    [clojure.string :as s]
@@ -222,8 +223,9 @@
 ;;       (matching the naming conventions in the project)
 (defn- cli-display-menu [menu-options-input menu-mappings]
   (println (str d/MAIN-MENU-HEADER
-                (d/gen-menu-string {:menu-options menu-options-input
-                                    :menu-mappings menu-mappings}))))
+                (calc/gen-menu-string {:menu-options menu-options-input
+                                       :menu-mappings menu-mappings
+                                       :separator d/NEWLINE}))))
 
 
 ;; TODO: convert this function into string generation to leave
@@ -365,6 +367,9 @@
       :cancel-confirm (get-in cli-texts [:adding :cancel-confirm])
       :success-confirm (get-in cli-texts [:adding :success-confirm])})
 
+    ;;;; TODO: refactor cli-conduct-prioritization-review to use
+    ;;;; get-index-of-first-new-item-after-priority-item internally,
+    ;;;; rather than externally
     d/PRIORITIZE
     (cli-conduct-prioritization-review
      {:input-list input-list
@@ -399,6 +404,7 @@
     (println "Invalid action detected, error code 002.")))
 
 
+;; TODO: relocate this function to calc namespace, as its functionality is general
 (defn- gen-item-count-string [input-list]
   (if (= 1 (count input-list))
     (str d/NEWLINE "There is 1 item in your list.")
@@ -417,7 +423,7 @@
 
 
 ;; TODO: evaluate this function as a canditate for including in public API
-(defn cli-render-list [input-list]
+(defn- cli-render-list [input-list]
   (println (gen-list-render-output {:input-list input-list})))
 
 
@@ -437,6 +443,8 @@
           ;;_       (cli/clear)
           ;;_       (clojure.java.shell/sh "clear")
           ;;_       (r/cider-repl-clear-buffer)
+          ;; TODO: learn how to clear the REPL buffer programmatically
+          ;;       from within a program running in the REPL
           _        (cli-clear-buffer)
 
           current-list (get app-state-map :the-list)
@@ -444,27 +452,25 @@
           ;; render the user's to-do list to the command line
           _       (cli-render-list current-list)
 
-          current-menu (vec (d/sort-menu-options
+          current-menu (vec (calc/sort-menu-options
                              {:input-unsorted
-                              (d/get-valid-menu-options
-                               {:input-list current-list
-                                :all-menu-options d/all-menu-options-sorted})
+                              (calc/get-valid-menu-options
+                               {;; :input-list current-list
+                                :all-menu-options d/all-menu-options-sorted
+                                :prioritizable?
+                                (l/is-prioritizable-list? {:input-list current-list}) 
+                                :actionable?
+                                (l/is-doable-list? {:input-list current-list})
+                                })
                               :input-order d/all-menu-options-sorted}))
 
           ;; display the menu and get user's menu choice
           action-input (cli-do-menu-cycle
-                        {:input-menu current-menu ;; d/base-menu-options ;;;; TODO: modify this line in order to take in different menu options depending on the list state
-                         :input-menu-strings-map d/menu-strings-map
-                         ;;;; TODO: test to see if input-base-menu-options is necessary here
-                         ;; :input-base-menu-options d/base-menu-options
-                         })
+                        {:input-menu current-menu ;; this takes in different menu options depending on the list state
+                         :input-menu-strings-map d/menu-strings-map})
 
-          ;; println debugging
+          ;; confirmation messages (i.e. these are *not* println debugging statements)
           _       (case action-input
-                    ;; - [ ] Question: Why can I not use bindings instead of keyboards here in the case expression?
-                    ;;         - Answer: I think that it *is* the case that you can use bindings here. The particular 
-                    ;;           behavior of your bindings not appearing to work may be due to the fact that you were 
-                    ;;           using the "shorted"/"abbreviated" keywords, rather than the extended/full ones.
                     :add-new-item (println "Let's make a new item now...")
                     :prioritize-list (println "Let's review the list to prioritize the items within...")
                     :do-priority-item (println "Let's focus on the priority item and start taking action on it...")
