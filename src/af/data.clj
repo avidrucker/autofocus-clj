@@ -1,13 +1,9 @@
 (ns af.data
   ;;  "It's just data."
   ;; Domain model
-  (:require
-   [af.list :as l]
-   [clojure.set :as cs]
-   [clojure.string :as s]))
-
-
-(def DEBUG-MODE-ON false)
+  ;; TODO: review namespace for privatization
+  ;; TODO: review namespace for data spec candidates
+  )
 
 
 ;; TODO: find a way to abbreviate and shorten `about-texts` without losing valuable/critical meaning/context.
@@ -315,124 +311,4 @@ D17 Note: This to-do items collection was originally a hashmap, which then becam
 
 (def TODO-LIST-HEADER
   (str CLI-FENCE NEWLINE "My AutoFocus To-Do List" NEWLINE))
-
-
-(defn gen-menu-item-string [index item-string]
-  (str (inc index) ": " item-string))
-
-
-;; TODO: refactor NEWLINE in `gen-menu-string` to instead be an input map arg
-;; 2023_01_21 TIL: The `str` function is not appropriate for converting
-;;      keywords into strings. Instead, use the `name` function.
-(defn gen-menu-string
-  [{:keys [menu-options menu-mappings]}]
-  (s/join NEWLINE (map-indexed
-                gen-menu-item-string
-                (map menu-mappings menu-options))))
-
-
-;; Question: How can I diff between two vectors of keywords in Clojure?
-;; TODO: implement menu options list generation dynamically based on list state
-;; TODO: refactor this funmction to take in bools `prioritizable-list?` and `doable-list?` as map arg inputs rather than as internally calculated values (ie. calc externally and pass in instead)
-(defn invalid-menu-options
-  "This is used a helper to `get-valid-menu-options` by
-  indicating which menu options should be removed."
-  [{:keys [input-list]}]
-  (let [prioritizable-list?  (l/is-prioritizable-list?
-                              {:input-list input-list})
-        doable-list?         (l/is-doable-list?
-                              {:input-list input-list})
-        ;; _                    (when DEBUG-MODE-ON (println ["----------"
-        ;;                                "\nprioritizable-list?: " prioritizable-list?
-        ;;                                "\ndoable-list?: " doable-list?
-        ;;                                "\ninput-list: " input-list
-        ;;                                "\n----------"]))
-        ]
-    (cond
-      (and prioritizable-list? doable-list?) [] ;; remove nothing
-      ;; remove prioritize
-      (and (not prioritizable-list?) doable-list?) [PRIORITIZE]
-      ;; remove do
-      (and prioritizable-list? (not doable-list?)) [DO]
-      ;; remove both options
-      (and (not prioritizable-list?) (not doable-list?))
-      [PRIORITIZE DO])))
-
-
-
-(defn get-valid-menu-options
-  "By reviewing the input-list, this function can determine
-  which menu options should be added to the menu-options list."
-  [{:keys [input-list all-menu-options]}]
-  (when DEBUG-MODE-ON (println "getting valid menu option..."))
-  (let [result (vec (cs/difference ;; Q: clojure.data/diff wouldn't work for some reason, but why?
-        (set all-menu-options)
-        (set (invalid-menu-options {:input-list input-list}))))]
-    ;; (when DEBUG-MODE-ON (println ["options result: " result
-    ;;           "\nall menu options: " all-menu-options
-    ;;           "\ninput list: " input-list]))
-    result))
-
-
-;; ----------------------------------
-;; Question: How can I implement my own custom sorting order in Clojure?
-
-;; TODO: relocate to af.utils namespace
-;; source: https://stackoverflow.com/questions/4830900/how-do-i-find-the-index-of-an-item-in-a-vector
-;; native Clojure implementation of "index-of"
-(defn find-thing [needle haystack]
-  (first (keep-indexed #(when (= %2 needle) %1) haystack)))
-
-;; REPL testing
-;; (find-thing QUIT menu-options-order)
-;; (find-thing :potato menu-options-order)
-
-(defn sort-menu-options
-  [{:keys [input-unsorted input-order]}]
-  #_(println ["...attempting to sort..."
-            "coll to be ordered: " input-unsorted
-            "correct ordering: " input-order])
-  (sort-by #(find-thing % input-order) input-unsorted))
-
-
-;; REPL testing
-#_(def order-test [:boy :tree :apple :computer :frog])
-#_(def to-be-sorted-test [:frog :apple :tree])
-#_(find-thing :apple order-test)
-#_(sort-by #(find-thing % order-test) to-be-sorted-test)
-
-;; -----------------------------------------------
-
-;; TODO: convert to test block in an appropriate test namespace
-(comment
-  (def test-list-empty [])
-
-  (def test-list-done-ready-new
-    [{:t-index 0, :text "b", :status :done}
-     {:t-index 1, :text "c", :status :ready}
-     {:t-index 2, :text "d", :status :new}])
-
-  ;; (invalid-menu-options {:input-list test-list-empty})
-  (def menu-opts-a (get-valid-menu-options
-                    {:input-list test-list-empty
-                     :all-menu-options all-menu-options-sorted}))
-
-  ;; (invalid-menu-options {:input-list test-list-done-ready-new})
-  (def menu-opts-b (get-valid-menu-options
-                    {:input-list test-list-done-ready-new
-                     :all-menu-options all-menu-options-sorted}))
-
-#_(do
-  menu-opts-a
-  ;; menu-opts-b
-  )
-
-  (sort-menu-options {:input-unsorted menu-opts-a
-                      :input-order all-menu-options-sorted})
-
-  (sort-menu-options {:input-unsorted menu-opts-b
-                      :input-order all-menu-options-sorted})
-)  
-
-
 
