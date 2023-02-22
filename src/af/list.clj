@@ -333,7 +333,7 @@ to understand/read? A: Yes, it did.
 ;; TODO: Test that auto-marking works on the first item added to an empty list
 
 
-(defn filter-by-status
+(defn- filter-by-status
   [{:keys [input-list input-status]}]
   (filter #(= (:status %) input-status) input-list))
 
@@ -347,7 +347,7 @@ to understand/read? A: Yes, it did.
 
 
 ;; TODO: test to confirm that this works for lists with no items, with one item, and with multiple items of different status, and with multiple items of same status
-(defn last-of-status-from-list
+(defn- last-of-status-from-list
   "Returns the last element in the list with the target status.
   If no items with the target status are found, `nil` is returned."
   [{:keys [input-list target-status]}]
@@ -398,7 +398,7 @@ to understand/read? A: Yes, it did.
 
 
 ;; TODO: search for duplicate function in af.af namespace, remove duplicate
-(defn review-question
+(defn- review-question
   [{:keys [priority-item-text cursor-item-text]}]
   (str "Do you want to '" cursor-item-text 
        "' more than '" priority-item-text "'?"))
@@ -413,7 +413,7 @@ to understand/read? A: Yes, it did.
 
 ;; TODO: assess whether this is reusable for next-cursor
 ;; Q: Is it possible to run out of bounds with this function?
-(defn get-first-new-item-index-after-index-x
+(defn- get-first-new-item-index-after-index-x
   "Takes an input list and input-index (likely to be a cursor-index
   or priority-item-index), and returns back the next item index
   where the item has a :status of :new"
