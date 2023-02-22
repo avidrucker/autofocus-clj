@@ -133,7 +133,6 @@ done - a fully filled-in circle, brackets with an 'x' inside [x]
 (def EMPTY-STRING "")
 
 
-
 ;; 2023_01_22 TIL: How to close a Vim window without quitting its associated/displayed buffer via `:q`
 (def initial-list-state [])
 
@@ -160,6 +159,8 @@ D17 Note: This to-do items collection was originally a hashmap, which then becam
   ;; TODO: use defined constant (defined up above) instead of a vector literal
   [] EMPTY-LIST)
 
+
+;; TODO: assess whether this is still useful, rm if not, refactor if yes
 (def initial-domain-defaults
   ;; original name   "initial-defaults"
   {:todo-item {:text EMPTY-STRING
@@ -170,17 +171,18 @@ D17 Note: This to-do items collection was originally a hashmap, which then becam
                :IDX-last-marked-ready ENUM-PRE-INIT
                :IDX-last-done ENUM-PRE-INIT}})
 
+;; TODO: consider making FSM
 (def valid-interaction-states
-  ;; original name  "valid-states" 
-  {:list-states
-   ;; TODO: convert the following 3 lines to data description maps
-   ;; viewing: the list is rendered/displayed for user viewing
-   ;; adding: the list is having a new item added to it
-   ;; reviewing: the list is having new items be either marked ready or skipped in top to bottom order, skipping items that are already marked ready or done  (why do we iterate over the list? the list is iterated over in order to produce a series of binary questions for the user  (eg. A or B, yes or no, with the additional bonus option to quit anytime mid-answer ) () 
-   #{:viewing :adding :reviewing :focusing} 
+    ;; original name  "valid-states" 
+    {:list-states
+     ;; TODO: convert the following 3 lines to data description maps
+     ;; viewing: the list is rendered/displayed for user viewing
+     ;; adding: the list is having a new item added to it
+     ;; reviewing: the list is having new items be either marked ready or skipped in top to bottom order, skipping items that are already marked ready or done  (why do we iterate over the list? the list is iterated over in order to produce a series of binary questions for the user  (eg. A or B, yes or no, with the additional bonus option to quit anytime mid-answer ) () 
+     #{:viewing :adding :reviewing :focusing} 
    
-   :app-states
-   #{:loading :idle :taking-user-input :list-processing :quitting}})
+     :app-states
+     #{:loading :idle :taking-user-input :list-processing :quitting}})
 
 
 (def cli-marks
@@ -266,6 +268,7 @@ D17 Note: This to-do items collection was originally a hashmap, which then becam
    :quit        :quit-application})
 
 
+; TODO: refactor out shortened names, or, replace long names with shortened names
 ;; Q: Is there a macro for the following 7 lines, where, instead of defining multiple defs one after the other, instead, a map or list of tuples could be passed?
 (def ADD (get menu-options-map :add))
 (def PRIORITIZE (get menu-options-map :prioritize))
