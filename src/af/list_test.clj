@@ -51,6 +51,6 @@
   (let [step1 (sut/add-item-to-list
                {:input-item (get test-items 0)
                 :target-list []})
-        step2 (sut/conduct-focus-on-list {:input-list step1})]
+        step2 (sut/mark-priority-item-done {:input-list step1})]
     (is (= [{:t-index 0 :text "apple" :status :done}] step2))))
 

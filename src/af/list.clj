@@ -340,7 +340,8 @@ to understand/read? A: Yes, it did.
 
 
 ;; TODO: split this function into 2 functions, one that conducts the focus, and the other that handles the CLI I/O
-(defn conduct-focus-on-list
+;; original name: conduct-focus-on-list
+(defn mark-priority-item-done
   [{:keys [input-list]}]
   ;; 1. find bottom-most dotted  (status 'ready') item
   ;; 2. update item in list  (ie. create a new list with item replaced) to have a status of 'done'
@@ -360,19 +361,16 @@ to understand/read? A: Yes, it did.
 
         ;; after focusing on a list, we must auto-mark again, just in case that the item that was just completed was the last `:ready` item
           automarked-new-list   (conditionally-automark-list
-                                 {:input-list new-list})
-          ]
-    ;;;; TODO: implement focus stub
+                                 {:input-list new-list})]
     ;; index-of-item-to-focus-on
       automarked-new-list)
     ;; ... else, we return the list as-is
-    ;; TODO: use `print-and-return` function here
-    (do
-      ;; TODO: instead of printing here, return a map with a result and a response message, optionally with a `:success` status
-      ;; TODO: save as cancel/fail confirmation text
-      (println "List is not focusable, returning list as-is...")
-      input-list)))
-
+    ;; TODO: instead of printing here, return a map with a result and a response message, optionally with a `:success` status
+    ;; TODO: save as cancel/fail confirmation text
+    (u/print-and-return
+     {:input-string "List is not actionable, returning list as-is..."
+      :is-debug? false
+      :return-item input-list})))
 
 
 ;; TODO: Test that auto-marking correctly marks on the next (2nd) item added to a list that had only 1 item in it of status 'done'
@@ -394,6 +392,27 @@ to understand/read? A: Yes, it did.
   (last (filter-by-status
          {:input-list input-list
           :input-status :ready}))) 
+
+
+(defn gen-priority-item-is-str
+  [{:keys [input-list]}]
+  (str "The current priority item is '"
+       (get (get-priority-item-from-list {:input-list input-list}) :text)
+       "'."))
+
+
+(defn conduct-take-action-on-list
+  [{:keys [input-list]}]
+  (let [result                      (mark-priority-item-done {:input-list input-list})
+        priority-item               (get-priority-item-from-list {:input-list input-list})
+        result-with-work-remaining  (add-item-to-list
+                                     {:input-item (i/gen-duplicate-item
+                                                   {:input-item priority-item
+                                                    :input-status :new})
+                                      :target-list result})]
+    {:result result
+     :priority-item priority-item
+     :result-with-work-remaining result-with-work-remaining}))
 
 
 ;; TODO: assess whether this is reusable for next-cursor
@@ -522,7 +541,7 @@ to understand/read? A: Yes, it did.
    {:t-index 1, :text "b", :status :ready}])
 
 ;; (comment
-  (conduct-focus-on-list
+  (mark-priority-item-done
    {:input-list
     [{:t-index 0, :text "b", :status :ready}
      {:t-index 1, :text "c", :status :new}
