@@ -23,11 +23,13 @@
 #_(defn- cli-input-confirm [input]
     (println (str "You inputted '" input "'. Thank you for the valid input!")))
 
-#_(defn- cli-invalid-input-detected [input]
-    (println (str "Invalid input '" input "' entered.")))
+(defn- gen-invalid-input-detected-msg [input]
+    (str "Invalid input '" input "' entered."))
 
+;; TODO: refactor this function to take key-val map of {:invalid-input :invalid-confirm :re-prompt} where,
+;;       instead of passing x and y, the prompt is generated externally and passed in
 (defn- cli-invalid-input-notification-and-request [input x y]
-  (println (str "Invalid input '" input "' entered. "
+  (println (str (gen-invalid-input-detected-msg input)
                 "Please enter a digit between " x " and " y ":")))
 
 
