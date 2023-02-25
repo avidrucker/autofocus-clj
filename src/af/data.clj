@@ -13,13 +13,13 @@
   {:overview-and-summary 
    "About AutoFocus
     
-    The AutoFocus algorithm and task management system was created 
-    by Mark Forster. This application was developed by Avi Drucker.
+The AutoFocus algorithm and task management system was created 
+by Mark Forster. This application was developed by Avi Drucker.
     
-    The way AutoFocus works is roughly as follows:
-    1. make a list by adding items to it
-    2. prioritize the list as directed by the AutoFocus algorithm
-    3. do the things on the list"
+The way AutoFocus works is roughly as follows:
+1. make a list by adding items to it
+2. prioritize the list as directed by the AutoFocus algorithm
+3. do the things on the list"
    
    ;; For an example of AutoFocus in action, please select 'See Real Life AutoFocus example' from the menu. For a detailed explanation of the AutoFocus algorithm, please select 'See The AutoFocus Algorithm Steps' from the menu."
    
