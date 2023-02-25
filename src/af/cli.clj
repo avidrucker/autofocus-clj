@@ -8,29 +8,46 @@
    [clojure.string :as s]
    ))
 
-;; DONE: implement 'debug mode' which toggles on/off println debugging
-;; DONE: confirm that 'debug mode' works as desired 
-(def DEBUG-MODE-ON false)
+
+;; DONE: replace literal string hyphen/dash fences with def binding
+;; TODO: relocate string constants to af.data namespace
+;; TODO: evaluate whether calc and utils should be merged or kept separate
+
+
+(def DEBUG-MODE-ON 
+  "debug mode which toggles on/off println debugging"
+  false)
+
 
 (defn- gen-choice-confirm-string [input newline fence]
   (str "You selected choice #" input "." newline fence))
 
-;; TODO: write down why this is not a good idea: 'pass this to `cli-get-number-in-range-inclusive`'
-;; TODO: refactor cli functions to not directly call data items such as NEWLINE or CLI-FENCE, instead, write functions that move NEWLINE and CLI-FENCE to be sibling level functions under a shared parent function, for example (defn- cli-choice-confirm (gen-choice-confirm-str NEWLINe CLI-FENCE))
+
+;; TODO: write down why this is not a good idea: 'pass this to 
+;;       `cli-get-number-in-range-inclusive`'
+;; TODO: refactor cli functions to not directly call data items 
+;;       such as NEWLINE or CLI-FENCE, instead, write functions 
+;;       that move NEWLINE and CLI-FENCE to be sibling level 
+;;       functions under a shared parent function, for example 
+;;       `cli-choice-confirm`
 (defn- cli-choice-confirm [input]
   (println (gen-choice-confirm-string input d/NEWLINE d/CLI-FENCE)))
+
 
 #_(defn- cli-input-confirm [input]
     (println (str "You inputted '" input "'. Thank you for the valid input!")))
 
+
 (defn- gen-invalid-input-detected-msg [input]
     (str "Invalid input '" input "' entered."))
+
 
 ;; TODO: refactor this function to take key-val map of {:invalid-input :invalid-confirm :re-prompt} where,
 ;;       instead of passing x and y, the prompt is generated externally and passed in
 (defn- cli-invalid-input-notification-and-request [input x y]
-  (println (str (gen-invalid-input-detected-msg input)
-                "Please enter a digit between " x " and " y ":")))
+  (println (str (gen-invalid-input-detected-msg input) d/NEWLINE
+                "Please enter a digit between " x " and " y ","
+                d/NEWLINE "and then press the ENTER key:")))
 
 
 ;; TODO: rename invalid-input-re-request arg key so that it is clear from its name that it is a function 
@@ -46,7 +63,6 @@
       (let [input (read-line)]
         (if (and (not (nil? input)) (re-matches match-str input))
           (do
-            ;; DONE: replace literal string hyphen/dash fences with def binding
             (choice-confirm-func input)
             (Integer/parseInt input))
           (do
