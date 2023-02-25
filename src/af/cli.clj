@@ -365,27 +365,25 @@
 (defn cli-do-app-action
   [input-action input-list]
   (condp = input-action
-    d/ADD
-    (cli-conduct-add-action
-     {:input-list input-list
-      :prompt (get-in cli-texts [:adding :prompt])
-      :cancel-confirm (get-in cli-texts [:adding :cancel-confirm])
-      :success-confirm (get-in cli-texts [:adding :success-confirm])})
+    d/ADD         (cli-conduct-add-action
+                   {:input-list input-list
+                    :prompt (get-in cli-texts [:adding :prompt])
+                    :cancel-confirm (get-in cli-texts [:adding :cancel-confirm])
+                    :success-confirm (get-in cli-texts [:adding :success-confirm])})
 
     ;;;; TODO: refactor cli-conduct-prioritization-review to use
     ;;;; get-index-of-first-new-item-after-priority-item internally,
     ;;;; rather than externally
-    d/PRIORITIZE
-    (cli-conduct-prioritization-review
-     {:input-list input-list
-      :input-cursor-index
-      (l/get-index-of-first-new-item-after-priority-item
-       {:input-list input-list})})
+    d/PRIORITIZE  (cli-conduct-prioritization-review
+                   {:input-list input-list
+                    :input-cursor-index
+                    (l/get-index-of-first-new-item-after-priority-item
+                     {:input-list input-list})})
 
     ;; TODO: implement the yes/no question asking after a user is done 
     ;; focusing/actioning of 'Is there work remaining on this task/item?'
     ;; TODO: implement the 'press any key' or 'press the ENTER key' to continue
-    d/DO (cli-conduct-focus-action {:input-list input-list})
+    d/DO          (cli-conduct-focus-action {:input-list input-list})
 
     ;;;; overview-and-summary, detailed-steps, real-world-example
     d/ABOUT       (print-text-section-and-return-to-menu 
