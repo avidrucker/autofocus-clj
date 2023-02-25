@@ -71,7 +71,7 @@
 
 ;; 6. conduct one focus on the demo list
 
-(reset! demo-list-a (l/conduct-focus-on-list
+(reset! demo-list-a (l/mark-priority-item-done
                      {:input-list @demo-list-a}))
 
 
@@ -89,6 +89,17 @@
  (i/stringify-item {:item demo-item
                       :dict d/cli-marks})
  "- [ ] a")
+
+(= (i/stringify-item
+    {:item {:text "hi" :status :ready}
+     :dict d/cli-marks})
+   "- [o] hi")
+
+(=
+ (i/stringify-item
+  {:item {:text "hello" :status :done}
+   :dict d/cli-marks})
+   "- [x] hello")
 
 ;; Make a brand new item
 (= 
