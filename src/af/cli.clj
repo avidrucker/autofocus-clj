@@ -480,6 +480,8 @@
   (loop [;; initialize app state
          ;; initialize the user's to-do list
          t-time 0
+         ;; TODO: replace `initial-list-state` with loaded list when 
+         ;;       deserialization has been implemented
          app-state-map {:the-list d/initial-list-state}]
     (let [;; TODO: clear the terminal (probably right here?) for a 
           ;;       fresh display of the list, content, and menu choices
