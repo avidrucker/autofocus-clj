@@ -46,9 +46,9 @@ done - a fully filled-in circle like ⬤, brackets with an 'x' inside [x]
 - [ ] cont. (x1) pack for tomorrow's trip"})
 
 (def marks 
-  {:doc-strings {:new "Items that have been added to the list, but are not necessarily yet ready to be started, internally also called: 'unmarked' or 'clean'" 
-                 :ready "Items marked as 'ready to do', also called 'marked' or 'dotted'"
-                 :done "Items that have been focused on. Also called 'completed', these items could be toggled hidden, or archived..."} 
+  {:doc-strings {:new "Items that have been added to the list, but aren't necessarily ready to be started yet." ;; 'unmarked' or 'clean' 
+                 :ready "Items prioritized and designated as 'ready to do'." ;; 'marked' or 'dotted'
+                 :done "Items that have been done."} ;; Also called 'completed' 
    
    ;; "A dictionary of mark symbols useful for rendering bullet journal style list items in a command line interface  ('CLI')"
    :cli-symbols {:new " " :ready "o" :done "x"}
@@ -88,7 +88,7 @@ done - a fully filled-in circle like ⬤, brackets with an 'x' inside [x]
                                                   :doc-string "The index of the most recently item marked as 'ready' to do (i.e. focus on)."} 
                           :IDX-last-done {:type index-val?}}}})
 
-(def initial-defaults-notes
+#_(def initial-defaults-notes
   {:t-index {:notes "-2 is used as an initial :t-index value for items that are not yet appended, to differentiate from function return values of -1  (e.g. search / find / indexOf) ... That said, this would violate the above-mentioned todo-item shape... Leaving as-is for now, as it is a bit early to decide on"
              :todos "TODO: Determine whether, where, and when initial defaults are necessary, beneficial, and effective  (if not, consider removing either spec, initial-default, or both)" 
              :questions "Q: Will spec/shape checking apply after a todo-item is initialized, or once it is completely made  (i.e. from user input, or as a result of a duplication/clone operation)?  (this may affect the utility/efficacy of such a check)"}
@@ -96,6 +96,7 @@ done - a fully filled-in circle like ⬤, brackets with an 'x' inside [x]
                   :todos "TODO: Determine effective, simple resolution on how to set the :times-cloned value, and the value proposition for its existence"
                   :brainstorming "IDEA: Complex cases: all items of the same text are tallied up --> Note: This leads to a conundrum of having multiple items with the same text value, where some are clones/duplicates, and others are not (some are made as a result of incomplete/unfinished work from focus sessions, and others just happen to be repeat tasks). Potentially useful rule/check that may be helpful/useful later: The times-cloned should never be higher than 1 higher than the highest cloned item of the same text value"}})
 
+;; TODO: evaluate `copy-text` to determine if these texts are useful and/or better than the currently used prompts.
 ;; TODO: figure out how to fold sections of Clojure code in Emacs
 (def copy-text
   ;;TODO: assess which strings are needed only for console (command line) app
@@ -140,23 +141,16 @@ done - a fully filled-in circle like ⬤, brackets with an 'x' inside [x]
    :press-enter-key-to-return "Press the enter key to return to the main menu." 
    })
 
-(def ENUM-PRE-INIT
-  "I'm experimenting with a pre-initialization value of -2, because -1 usually indicates that something was not found... That said, this style of using negative numbers *is* something that seems very imperative and non-idiomatic in Clojure... I'd love to get some feedback on this from my Clojure senpai friends/mentors." 
-  -2)
-
-
-(def EMPTY-STRING "")
-
 
 ;; 2023_01_22 TIL: How to close a Vim window without quitting its associated/displayed buffer via `:q`
-(def initial-list-state [])
+#_(def initial-list-state [])
 
-(def EMPTY-LIST
+#_(def EMPTY-LIST
   ;; note: this was '() originally
   ;; TODO: rename this to EMPTY-TODO-LIST
   [])
 
-(def NEW-ITEM-STATUS :new)
+#_(def NEW-ITEM-STATUS :new)
 
 #_(defn new-list-hashmap
     ;; TODO: relocate to domain data namespace
@@ -165,7 +159,7 @@ done - a fully filled-in circle like ⬤, brackets with an 'x' inside [x]
     "Returns an empty hashmap to serve as a new todo item list. This function may also be useful for reseting a list back to a size of zero." 
     [] {})
 
-(defn NEW-LIST
+#_(defn NEW-LIST
   ;; TODO: relocate to domain data namespace
   "This initializer function useful for creating new lists, and clearing/reseting lists as needed.
    
@@ -189,7 +183,7 @@ done - a fully filled-in circle like ⬤, brackets with an 'x' inside [x]
                }})
 
 ;; TODO: consider making FSM
-(def valid-interaction-states
+#_(def valid-interaction-states
     ;; original name  "valid-states" 
     {:list-states
      ;; TODO: convert the following 3 lines to data description maps
@@ -219,7 +213,7 @@ done - a fully filled-in circle like ⬤, brackets with an 'x' inside [x]
    :ready "o" ;; also called  "marked" or  "dotted", these items are ready to start doing
    :done "x"})
 
-(def gui-marks
+#_(def gui-marks
   "The bullet point marks used to denote item status in a GUI version of this application.
 
   When rendered, to-do lists will appear something like the following:
@@ -236,7 +230,7 @@ done - a fully filled-in circle like ⬤, brackets with an 'x' inside [x]
    :filled "⏺" ;; black circle
    })
 
-(def marks-hashmap
+#_(def marks-hashmap
   {:new {:semantic-name "new"
          :semantic-name-2 "clean" ;; 'clean' refers to 'untouched' 
          :mark-name "outline"
@@ -271,7 +265,6 @@ done - a fully filled-in circle like ⬤, brackets with an 'x' inside [x]
           :notes ""}})
 
 
-;; DONE: move menu states data here
 ;; TODO: reassess whether a verbose menu option is helpful and/or necessary
 ;; App State Control Data
 (def menu-options-map
