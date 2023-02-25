@@ -154,26 +154,25 @@
              :invalid-input-response INVALID-YNQ-INPUT-RESPONSE}))
 
           ;; get the result of submitting a comparison with user's answer 
-          submission-response   (l/submit-single-comparison {:input-list current-list
-                                                             :input-cursor-index current-index
-                                                             :answer-input current-answer})
+          submission-response   (l/submit-single-comparison
+                                 {:input-list current-list
+                                  :input-cursor-index current-index
+                                  :answer-input current-answer})
 
-          ;; TODO: Answer the question: Is there a way to destructure the following in one line?
-          updated-list       (get submission-response :output-list)
-          updated-cursor-index      (get submission-response :next-cursor)
-          user-is-quitting?  (get submission-response :quitting-comparison)
-          ;; TODO: confirm that the next line works as desired --> It does not appear to work. Q; Why does it not work as desired? What would work as desired in this case?
-          ;; {:keys [updated-list updated-index user-is-quitting?]} submission-response
+          ;; destructure submission response back into usable bindings
+          {:keys [next-list ;; originally: updated-list / output-list 
+                  next-cursor-index ;; originally: updated-cursor-index / next-cursor
+                  user-is-quitting? ;; originally: quitting-comparison
+                  ]} submission-response
 
           ;; `comparing?` will be our sentinel value to terminate review/prioritization sessions
-          comparing?         (and updated-cursor-index (not user-is-quitting?))] ;; TODO: clarify intent of code here with a comment
+          comparing?         (and next-cursor-index (not user-is-quitting?))] ;; TODO: clarify intent of code here with a comment
       (if comparing?
-        (recur updated-list updated-cursor-index)
+        (recur next-list next-cursor-index)
         (u/print-and-return
-         ;; TODO: move this string to af.data
-         {:input-string "... ending review ..."
+         {:input-string d/REVIEW-END 
           :is-debug? false
-          :return-item updated-list})))))
+          :return-item next-list})))))
 
 
 (comment

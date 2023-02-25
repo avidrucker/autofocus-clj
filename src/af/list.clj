@@ -695,6 +695,9 @@ to understand/read? A: Yes, it did.
     ))
 
 
+;; TODO: refactor so that submit-single-comparison does 
+;; not need to know about caller (ie. figure out a common 
+;; protocol, such as in-out, prev-next, {:abort true}, etc.)
 (defn submit-single-comparison
   "When answer-input is `:yes`, current-item gets marked as 
    `:ready` (ie. a new list is returned with the item at the 
@@ -703,7 +706,7 @@ to understand/read? A: Yes, it did.
    When answer-input is `:no`, we simply update the cursor index
    and return the input-list as-is"
   [{:keys [input-list input-cursor-index answer-input]}]
-  {:output-list 
+  {:next-list 
    (if (= answer-input :yes)
      ;; when the answer is yes, a newly created list is returned
      (u/print-and-return
@@ -716,10 +719,9 @@ to understand/read? A: Yes, it did.
          :input-status :ready})})
      ;; else, the input-list is returned as-is
      input-list)
-   :next-cursor (calc-next-cursor {:input-list input-list
+   :next-cursor-index (calc-next-cursor {:input-list input-list
                                    :input-cursor-index input-cursor-index})
-   :quitting-comparison (= answer-input :quit)})
-
+   :user-is-quitting? (= answer-input :quit)})
 
 (comment
   (def submit-test-1a (conj round-test-1 {:answer-input :yes}))
