@@ -42,6 +42,9 @@ done - a fully filled-in circle, brackets with an 'x' inside [x]
    
    ;; "A dictionary of mark symbols useful for rendering bullet journal style list items in a command line interface  ('CLI')"
    :cli-symbols {:new " " :ready "o" :done "x"}
+
+   ;; Item status marks to be used for the graphical user interface ("GUI") version of AutoFocus
+   :gui-symbols {:new "◯" :ready "⦿" :done "⬤"}
    
    ;;  "A stylistic guide on how to render AF items in a GUI"  
    :gui-styling {:new {:bullet "Open circle"
