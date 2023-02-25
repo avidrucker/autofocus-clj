@@ -6,11 +6,13 @@
   )
 
 (def WELCOME-MESSAGE
-  "Welcome to AutoFocus, a time management system designed by Mark Forster.\nPlease start by creating some to-do items to add them to your list.")
+  "Welcome to AutoFocus, a time management system designed by Mark Forster.\nPlease start by adding a to-do item to your list.")
 
 ;; TODO: find a way to abbreviate and shorten `about-texts` without losing valuable/critical meaning/context.
 (def about-texts
-  {:overview-and-summary "The AutoFocus algorithm and task management system was originally created by Mark Forster. This application was developed by Avi Drucker.
+  {:overview-and-summary "About AutoFocus
+
+The AutoFocus algorithm and task management system was originally created by Mark Forster. This application was developed by Avi Drucker.
 
 The way AutoFocus works is roughly as follows:
 1. make a list by adding items to it
@@ -18,22 +20,26 @@ The way AutoFocus works is roughly as follows:
 3. do the things on the list
 
 For an example of AutoFocus in action, please select 'See Real Life AutoFocus example' from the menu. For a detailed explanation of the AutoFocus algorithm, please select 'See The AutoFocus Algorithm Steps' from the menu."
-   :high-level-what-and-why "The AutoFocus algorithm helps you (1) determine what you are most ready for and wanting to do at any given time, and (2) to take a bias towards action on such tasks. Many task management systems (including paper to-do lists) suffer a usability issue in that they tend to get cluttered and messy, and they are easily subverted to serve procrastination. AutoFocus is designed to fight against such procrastination."
-   :detailed-steps "1. Add one or more to-do items to your list (always marking* the first 'new' item as 'ready' if and only if there are no 'ready' items)
-2. Make a decision to either prioritize** your list, or to start taking action on the marked (ready) item, marking* items as done when you have finishing working on them, as well as re-writing to-do items at the bottom of the list if you have remaining work left to do after stopping activity on a given item.
+   :high-level-what-and-why "AutoFocus: What It Is and Why It's Powerful
+
+The AutoFocus algorithm helps you (1) determine what you are most ready for and wanting to do at any given time, and (2) to take a bias towards action on such tasks. Many task management systems (including paper to-do lists) suffer a usability issue in that they tend to get cluttered and messy, and they are easily subverted to serve procrastination. AutoFocus is designed to fight against such procrastination."
+   :detailed-steps "How to AutoFocus, In Detail
+
+1. Add one or more to-do items to your list (always marking* the first 'new' item as 'ready' if and only if there are no 'ready' items)
+2. Make a decision to either prioritize** your li3st, or to start taking action on the marked (ready) item, marking* items as done when you have finishing working on them, as well as re-writing to-do items at the bottom of the list if you have remaining work left to do after stopping activity on a given item.
 3. Repeat steps 1 and 2 until you reach the end of your paper or computer screen, at which point you can start a new page, transferring over any items that you have yet to do
 
 *Avi's suggested marks are, for paper and digital text respectively:
-new - an open outline circle, empty brackets [ ]
-ready - a circle with a dot in the center of it, brackets with an 'o' inside [o]
-done - a fully filled-in circle, brackets with an 'x' inside [x]
+new - an open outline circle like ◯, empty brackets [ ]
+ready - a circle with a dot in the center of it like ⦿, brackets with an 'o' inside [o]
+done - a fully filled-in circle like ⬤, brackets with an 'x' inside [x]
 
 ** Prioritizing one's list is done by comparing the bottom-most marked as ready item (the 'priority item') with the unmarked/new items that follow it. The process is done by asking the question, 'Do I want to B more than A?' where A is the priority item and B is the unmarked/new item that comes next after A. If the answer is yes, then B gets marked as ready and becomes the new 'priority item'. If the answer is no, then we simply move on to compare A with the next unmarked/new item in the list, if it exists, skipping any items that are marked as done. This process is repeated until once for each unmarked/new item below B until there are no more unmarked/new items left to compare against the priority item."
    :real-world-example "Let's say that you have three things that you know you need to do: 'finish trig homework', 'wash the dishes', and 'pack for tomorrow's trip'. You add these three things to your list, dotting the first item as soon as you add it to your list to mark it as 'ready'. This first dotted item is also now the 'priority item'. You can now prioritize the entire list by asking for each unmarked 'new' item, 'Do I want to do this item more than the 'priority item'?' Let's say you answer 'no' to dishes and 'yes' to packing. Your list will have dotted the first and third items, with the third item being the current priority item. Now that we've reviewed/prioritized to the bottom of the list, it is a good time to start taking action on some of the items. You do your packing, and, once you stop packing, you mark it as 'done'. Then, you ask yourself, 'Am I 100% done with this task?' Let's say in this case the answer is 'no'. Because the answer is 'no', we will add a duplicate of the third item to the bottom of the list. The final list will look like this:
 - [o] finish trig homework
 - [ ] wash the dishes
 - [x] pack for tomorrow's trip
-- [ ] pack for tomorrow's trip"})
+- [ ] cont. (x1) pack for tomorrow's trip"})
 
 (def marks 
   {:doc-strings {:new "Items that have been added to the list, but are not necessarily yet ready to be started, internally also called: 'unmarked' or 'clean'" 
@@ -158,8 +164,8 @@ done - a fully filled-in circle, brackets with an 'x' inside [x]
 (defn NEW-LIST
   ;; TODO: relocate to domain data namespace
   "This initializer function useful for creating new lists, and clearing/reseting lists as needed.
-
-D17 Note: This to-do items collection was originally a hashmap, which then became a list, and is now currently a vector."
+   
+   D17 Note: This to-do items collection was originally a hashmap, which then became a list, and is now currently a vector."
   ;; TODO: convert back to hashmap when you want to optimize, conduct performance tests/profiling
   ;; TODO: use defined constant (defined up above) instead of a vector literal
   [] EMPTY-LIST)
@@ -286,6 +292,7 @@ D17 Note: This to-do items collection was originally a hashmap, which then becam
 (def QUIT (get menu-options-map :quit))
 
 
+;; TODO: determine why base-menu-options isn't being used currently
 ;; TODO: IDEA: Separate the menu into two: (1) main menu for application level actions, and (2) to-do list menu for list level actions (add, prioritize, do, plus a 'return to main menu' option)
 (def base-menu-options
   "Base menu options are available by default, and will display every time the menu is rendered. This is in contrast with situation-dependent (ie. conditional) menu options, such as PRIORITIZE and DO.
@@ -302,13 +309,13 @@ D17 Note: This to-do items collection was originally a hashmap, which then becam
 
 ;; TODO: relocate to application interface data namespace
 (def menu-strings-map
-  {ADD "Add New To-Do Item"
-   PRIORITIZE "Review and Prioritize List"
-   DO "Do Priority Item"
-   ABOUT "Read About AutoFocus"
+  {ADD "Add a new to-do item"
+   PRIORITIZE "Prioritize my list"
+   DO "Do the highest priority item"
+   ABOUT "Read about AutoFocus"
    EXAMPLE "See Real Life AutoFocus Example"
    HOW-TO "See The AufoFocus Algorithm Steps"
-   QUIT "Quit Application"})
+   QUIT "Quit the application"})
 
 
 ;; CLI Constants
@@ -317,8 +324,22 @@ D17 Note: This to-do items collection was originally a hashmap, which then becam
 (def NEWLINE "\n")
 
 (def MAIN-MENU-HEADER
-  (str CLI-FENCE NEWLINE "AutoFocus Main Menu" NEWLINE))
+  (str CLI-FENCE NEWLINE "Main Menu" NEWLINE))
 
 (def TODO-LIST-HEADER
-  (str CLI-FENCE NEWLINE "My AutoFocus To-Do List" NEWLINE))
+  (str CLI-FENCE NEWLINE "My To-Do List" NEWLINE))
 
+(def REVIEW-START
+  "...starting review...")
+
+(def REVIEW-END
+  "... ending review ...")
+
+(def ENTER-TO-CONTINUE
+  "Once you have stopped working on this task, press ENTER to continue.")
+
+(def LIST-EMPTY
+  "> There are no items in your to-do list currently.")
+
+(def THANKS-BYE
+  "Thank you for using AutoFocus!")
