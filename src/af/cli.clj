@@ -20,9 +20,26 @@
   false)
 
 
+;; STRING CONSTANTS
+;; TODO: relocate this & other cli copy text to top of cli namespace
+(def cli-texts
+  {:adding {:prompt "Please enter the text for your to-do item:"
+            :cancel-confirm "... cancelling adding new item to list..."
+            :success-confirm "...adding item to list..."}})
+
+(def RETURN-TO-MAIN-MENU-STRING 
+  "Please press the ENTER key to return to the main menu.")
+
+(def INVALID-YNQ-INPUT-RESPONSE
+  "That wasn't a 'y', 'n' or 'q' answer. Please try again.")
+
+#_(def INVALID-YN-INPUT-RESPONSE
+  "That wasn't a 'y' or 'n' answer. Please try again.")
+
+
+;; STRING GENERATION
 (defn- gen-choice-confirm-string [input newline fence]
   (str "You selected choice #" input "." newline fence))
-
 
 ;; TODO: write down why this is not a good idea: 'pass this to 
 ;;       `cli-get-number-in-range-inclusive`'
@@ -34,14 +51,11 @@
 (defn- cli-choice-confirm [input]
   (println (gen-choice-confirm-string input d/NEWLINE d/CLI-FENCE)))
 
-
 #_(defn- cli-input-confirm [input]
     (println (str "You inputted '" input "'. Thank you for the valid input!")))
 
-
 (defn- gen-invalid-input-detected-msg [input]
     (str "Invalid input '" input "' entered."))
-
 
 ;; TODO: refactor this function to take key-val map of {:invalid-input :invalid-confirm :re-prompt} where,
 ;;       instead of passing x and y, the prompt is generated externally and passed in
@@ -71,9 +85,10 @@
             (invalid-input-re-request input x y)
             (recur)))))))
 
-
+;; TODO: instead of matching on valid letters, you can match on valid keys
 (def valid-ynq-answer-choices
-  #{"y" "Y" "q" "Q" "n" "N" "yes" "YES" "no" "NO" "quit" "QUIT"})
+  #{"y" "Y" "q" "Q" "n" "N"
+    "yes" "YES" "no" "NO" "quit" "QUIT"})
 
 (def valid-yn-answer-choices
   #{"y" "Y" "n" "N" "yes" "YES" "no" "NO"})
@@ -119,14 +134,8 @@
           (recur))))))
 
 
-(def INVALID-YNQ-INPUT-RESPONSE
-  "That wasn't a 'y', 'n' or 'q' answer. Please try again.")
-
-#_(def INVALID-YN-INPUT-RESPONSE
-  "That wasn't a 'y' or 'n' answer. Please try again.")
-
 ;; TODO: relocate to af.demo namespace
-(def demo-question
+#_(def demo-question
   {:input-question "Do you like apples more than bananas? Please answer 'y' for 'yes', 'n' for 'no', or 'q' for 'quit: "
    :valid-answers valid-ynq-answer-choices
    :invalid-input-response INVALID-YNQ-INPUT-RESPONSE})
@@ -145,7 +154,7 @@
   ;;    - the new list (modified if user's answer was `:yes` or unmodified otherwise)
   ;;    - the next cursor (which may be `nil` if there are no more items to review/compare/prioritize)
   ;;    - the user's intent to continue (`true` for `:yes` and `:no` answers, `false` if the user's answer was `:quit`) ;; `intent-to-continue`
-  (println "...starting review...") ;; TODO: convert to custom debug statement (when DEBUG-MODE-ON ...)
+  (println d/REVIEW-START) ;; TODO: convert to custom debug statement (when DEBUG-MODE-ON ...)
   (loop [current-list input-list
          current-index input-cursor-index]
     (let [;; get the user's answer to the comparison question
@@ -220,6 +229,7 @@
                              :return-item input})
         ;; TODO: see if using `print-and-return` works here with recur as the `:return-item`
         (do
+           ;; TODO: change text to "Input 'x' is not valid."
           (println (str "Input of '" input
                         "' does not appear to be valid."))
           (recur))))))
@@ -254,13 +264,13 @@
                                        :separator d/NEWLINE}))))
 
 
-;; TODO: convert this function into string generation to leave
-;; the printing responsibilities to the caller/parent function
-;; suggested new name `gen-selection-prompt-with-number-input`
+;; TODO: refactor/convert this function into string generation 
+;; to leave printing responsibilities to the caller/parent function
+;; Suggested new name `gen-selection-prompt-with-number-input`
 (defn- cli-ask-for-menu-input
   [options-cnt]
   (println (str
-            "Please make a selection from the above menu [1-"
+            "Select by number from the above menu [1-"
             options-cnt "]: ")))
 
 ;; TODO: create a custom debug macro that takes in a collection of bindings/names/symbols,
@@ -281,19 +291,15 @@
     (cli-display-menu input-menu input-menu-strings-map)
     (cli-ask-for-menu-input menu-length)
     (get input-menu
-       ;; TODO: refactor cli-get-number-in-range-inclusive call signature to have clearer inputs
+       ;; TODO: refactor cli-get-number-in-range-inclusive call 
+         ;;     signature to have clearer inputs ('lower' & 
+         ;;     'upper' instead of 'x' & 'y')
          (dec (cli-get-number-in-range-inclusive
                1
                menu-length
                {:choice-confirm-func cli-choice-confirm
-                :invalid-input-re-request cli-invalid-input-notification-and-request})))))
-
-
-;; TODO: relocate to af.data
-(def cli-texts
-  {:adding {:prompt "Please enter the text for your to-do item:"
-            :cancel-confirm "... cancelling adding new item to list..."
-            :success-confirm "...adding item to list..."}})
+                :invalid-input-re-request 
+                cli-invalid-input-notification-and-request})))))
 
 
 (defn- cli-conduct-add-action
@@ -312,20 +318,23 @@
         :is-debug? true
         :debug-active? DEBUG-MODE-ON
         :return-item (l/add-item-to-list
-                      {:input-item (i/create-new-item-data {:input-text input-text})
+                      {:input-item
+                       (i/create-new-item-data
+                        {:input-text input-text})
                        :target-list input-list})}))))
 
 
-;; :debug-active? DEBUG-MODE-ON
-(defn cli-clear-buffer []
+(defn- cli-clear-buffer []
   (when DEBUG-MODE-ON
-    (println "clearing the buffer..."))
+    ;; TODO: relocate string to top of namespace
+    (println "clearing the buffer...")) 
   (println "\033[2J")
   (println "\033[0;0H"))
 
 
-(defn print-wait-on-enter-key-then-return 
-  [{:keys [output-text continue-prompt return-item is-debug? debug-active?]}]
+(defn- print-wait-on-enter-key-then-return 
+  [{:keys [output-text continue-prompt return-item 
+           is-debug? debug-active?]}]
   (let [result (u/print-and-return
                 {:input-string output-text
                  :is-debug? is-debug?
@@ -333,12 +342,7 @@
                  :return-item return-item})]
     (cli-press-enter-key-to-continue
      {:prompt continue-prompt})
-    result
-    )
-  )
-
-
-(def RETURN-TO-MAIN-MENU-STRING "Please press the ENTER key to return to the main menu.")
+    result))
 
 
 (defn print-text-section-and-return-to-menu
@@ -351,36 +355,52 @@
       :return-item input-list}))
 
 
+;; TODO: rename this function, and all instances of the 
+;;       word 'focus' to replace with `take-action`
 (defn cli-conduct-focus-action
   [{:keys [input-list]}]
-  (let [result (l/conduct-focus-on-list {:input-list input-list})
-        priority-item (l/get-priority-item-from-list {:input-list input-list})
-        priority-item-text (get priority-item :text)]
+  (let [take-action-results
+        (l/conduct-take-action-on-list
+         {:input-list input-list})
+
+        {:keys
+         [result result-with-work-remaining priority-item]}
+        take-action-results
+
+        priority-item-text
+        (get priority-item :text)]
+
     (cli-clear-buffer)
-    (println "----------") ;; TODO: replace magic texts with af.data constants
-    (println "Focus Mode")
+
+    (println d/CLI-FENCE)
+    
+    ;; TODO: replace the following line with a string generation function
     (println (str "You are currently taking action on '" priority-item-text "'..."))
     (cli-press-enter-key-to-continue
-     {:prompt "Once you have stopped working on this task, press ENTER to continue."})
+     {:prompt d/ENTER-TO-CONTINUE})
       ;; TODO: Ask the user here if there is any remaining work left (yes/no question):
       ;;       - If yes, on top of marking the priority item as done, duplicate the 
     ;;       priority item and append it to the list.
+
     (let [work-remaining
           (= :yes
-             (cli-ask-question-with-limited-answer-set
-              {:input-question
-               "Is there work remaining to be done on '"
-               priority-item-text "'? (answer Y for yes, N for no): "
-               :valid-answers valid-yn-answer-choices
-               :invalid-input-response
-               "Please type Y or N to answer 'yes' or 'no', and then hit the ENTER key."}))]
+             (convert-answer-letter-to-keyword
+              (cli-ask-question-with-limited-answer-set
+               {:input-question (str "Is there work remaining to be done on '"
+                                     priority-item-text "'? (answer Y for yes, N for no): ")
+                :valid-answers valid-yn-answer-choices
+                :invalid-input-response
+                "Please type Y or N to answer 'yes' or 'no', and then hit the ENTER key."})))]
       (if work-remaining
-        (u/print-and-return {:input-string "Duplicating priority item...\nMarking the priority item as done..."
-                             :is-debug? false
-                             :return-item (l/add-item-to-list {:input-item (i/gen-duplicate-item priority-item) :target-list result})
-                             })
-        
-        (u/print-and-return {:input-string "Marking the priority item as done..." :is-debug? false :return-item result})))))
+        (u/print-and-return
+         {:input-string (str "Duplicating priority item...\n"
+                             "Marking the priority item as done...")
+          :is-debug? false
+          :return-item result-with-work-remaining})
+        (u/print-and-return
+         {:input-string "Marking the priority item as done..."
+          :is-debug? false
+          :return-item result})))))
 
 
 (defn cli-do-app-action
@@ -438,8 +458,7 @@
 (defn- gen-list-render-output
   [{:keys [input-list]}]
   (if (zero? (count input-list))
-    (str d/TODO-LIST-HEADER
-         "There are no items in your to-do list currently.")
+    (str d/TODO-LIST-HEADER d/LIST-EMPTY)
     (str d/TODO-LIST-HEADER
          (l/stringify-list {:input-list input-list
                             :marks-dict d/cli-marks})
@@ -480,23 +499,28 @@
           ;; render the user's to-do list to the command line
           _       (cli-render-list current-list)
 
-          current-menu (vec (calc/sort-menu-options
-                             {:input-unsorted
-                              (calc/get-valid-menu-options
-                               {;; :input-list current-list
-                                :all-menu-options d/all-menu-options-sorted
-                                :prioritizable?
-                                (l/is-prioritizable-list? {:input-list current-list}) 
-                                :actionable?
-                                (l/is-doable-list? {:input-list current-list})
-                                })
-                              :input-order d/all-menu-options-sorted}))
+          current-menu (vec 
+                        (calc/sort-menu-options
+                         {:input-unsorted
+                          (calc/get-valid-menu-options
+                           {:all-menu-options d/all-menu-options-sorted
+
+                            :prioritizable?
+                            (l/is-prioritizable-list? {:input-list current-list})
+                            
+                            :actionable? 
+                            (l/is-doable-list? {:input-list current-list})})
+                          
+                          :input-order d/all-menu-options-sorted}))
 
           ;; display the menu and get user's menu choice
           action-input (cli-do-menu-cycle
                         {:input-menu current-menu ;; this takes in different menu options depending on the list state
                          :input-menu-strings-map d/menu-strings-map})
 
+          ;; TODO: evaluate the purpose/utility of these display messages, 
+          ;;       as well as, very importantly, which ones end up being 
+          ;;       seen by the end-user
           ;; confirmation messages (i.e. these are *not* println debugging statements)
           _       (case action-input
                     :add-new-item (println "Let's make a new item now...")
@@ -512,7 +536,7 @@
           new-list (cli-do-app-action action-input current-list)]
       (if (= d/QUIT action-input)
         ;; TODO: relocate this string to af.data namespace
-        (println "Thank you for using AutoFocus!")
+        (println d/THANKS-BYE)
         (recur
          (inc t-time)
          {:the-list new-list})))))
