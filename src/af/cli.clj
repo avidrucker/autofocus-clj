@@ -235,10 +235,13 @@
           (recur))))))
 
 
+;; TODO: rename function to accomodate functionality *and* context
 (defn- single-q?
   "used to determine if a CLI user is attempting to quit when inputting text"
   [input-text]
-  (= (s/lower-case input-text) "q"))
+  (or 
+   (= (s/lower-case input-text) "q")
+   (= (s/lower-case input-text) "quit")))
 
 
 (defn- cli-quittable-get-text-from-user
