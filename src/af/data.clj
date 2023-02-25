@@ -10,19 +10,23 @@
 
 ;; TODO: find a way to abbreviate and shorten `about-texts` without losing valuable/critical meaning/context.
 (def about-texts
-  {:overview-and-summary "About AutoFocus
-
-The AutoFocus algorithm and task management system was originally created by Mark Forster. This application was developed by Avi Drucker.
-
-The way AutoFocus works is roughly as follows:
-1. make a list by adding items to it
-2. prioritize the list as directed by the AutoFocus algorithm
-3. do the things on the list
-
-For an example of AutoFocus in action, please select 'See Real Life AutoFocus example' from the menu. For a detailed explanation of the AutoFocus algorithm, please select 'See The AutoFocus Algorithm Steps' from the menu."
+  {:overview-and-summary 
+   "About AutoFocus
+    
+    The AutoFocus algorithm and task management system was created 
+    by Mark Forster. This application was developed by Avi Drucker.
+    
+    The way AutoFocus works is roughly as follows:
+    1. make a list by adding items to it
+    2. prioritize the list as directed by the AutoFocus algorithm
+    3. do the things on the list"
+   
+   ;; For an example of AutoFocus in action, please select 'See Real Life AutoFocus example' from the menu. For a detailed explanation of the AutoFocus algorithm, please select 'See The AutoFocus Algorithm Steps' from the menu."
+   
    :high-level-what-and-why "AutoFocus: What It Is and Why It's Powerful
 
 The AutoFocus algorithm helps you (1) determine what you are most ready for and wanting to do at any given time, and (2) to take a bias towards action on such tasks. Many task management systems (including paper to-do lists) suffer a usability issue in that they tend to get cluttered and messy, and they are easily subverted to serve procrastination. AutoFocus is designed to fight against such procrastination."
+   
    :detailed-steps "How to AutoFocus, In Detail
 
 1. Add one or more to-do items to your list (always marking* the first 'new' item as 'ready' if and only if there are no 'ready' items)
