@@ -12,6 +12,7 @@
 ;; DONE: replace literal string hyphen/dash fences with def binding
 ;; TODO: relocate string constants to af.data namespace
 ;; TODO: evaluate whether calc and utils should be merged or kept separate
+;; TODO: review entire code base for (not (nil?)) to refactor/replace with (some?)
 
 
 (def DEBUG-MODE-ON 
@@ -77,7 +78,6 @@
 (def valid-yn-answer-choices
   #{"y" "Y" "n" "N" "yes" "YES" "no" "NO"})
 
-
 (defn convert-answer-letter-to-keyword
   [input-letter]
   (case (s/upper-case input-letter)
@@ -90,12 +90,19 @@
     :error-code-003))
 
 
-;; TODO: rename `cli-ask-yes-no-quit-question` function to `cli-ask-question-with-limited-answer-set` communicate that it can do both quittable questions (such as y/n/q) as well as binary yes/no (y/n) questions
 (defn- cli-ask-question-with-limited-answer-set
-  "Asks the user for an answer to a question with a limited answer set, typically one character in length for convenience/simplicity. If the consumer of this function so desires, answers may also be numbers, whole words, or strings including whitespace and punctuation, with carriage returns being the only exception for allowable answer inputs. What the program does with the answer is up to the consumer. Therefore, answers themselves have no built in semantic meaning (such as confirming, quitting, etc.), other than what the consumer communicates to the user.
-
-  Example questions may include yes/no questions, yes/no/quit, or to make a selection from a list/set of menu choice options.
-  "
+  "Asks the user for an answer to a question with a limited answer 
+   set, typically one character in length for convenience/simplicity. 
+   If the consumer of this function so desires, answers may also be 
+   numbers, whole words, or strings including whitespace and 
+   punctuation, with carriage returns being the only exception for 
+   allowable answer inputs. What the program does with the answer is 
+   up to the consumer. Therefore, answers themselves have no 
+   built-in semantic meaning (such as confirming, quitting, etc.), 
+   other than what the consumer communicates to the user.
+   
+   Example questions may include yes/no questions, yes/no/quit, or 
+   to make a selection from a list/set of menu choice options."
   [{:keys [input-question valid-answers invalid-input-response]}]
   (loop []
     (let [_     (println input-question)
@@ -105,17 +112,17 @@
                              :is-debug? false
                              :return-item input})
         (do
-        ;; TODO: if possible, replace the following `do-print-return` with your custom `print-and-return` utility function
+          ;; TODO: if possible, replace the following `do-print-return` 
+          ;;       with your custom `print-and-return` utility function
           (println (str "You entered '" input "'."))
           (println invalid-input-response)
           (recur))))))
 
 
-;; TODO: relocate string constants to af.data namespace
 (def INVALID-YNQ-INPUT-RESPONSE
   "That wasn't a 'y', 'n' or 'q' answer. Please try again.")
 
-(def INVALID-YN-INPUT-RESPONSE
+#_(def INVALID-YN-INPUT-RESPONSE
   "That wasn't a 'y' or 'n' answer. Please try again.")
 
 ;; TODO: relocate to af.demo namespace
@@ -142,7 +149,6 @@
   (loop [current-list input-list
          current-index input-cursor-index]
     (let [;; get the user's answer to the comparison question
-          ;; _ (println ["list state: " current-list "cursor index: " current-index])
           current-answer
           (convert-answer-letter-to-keyword
            (cli-ask-question-with-limited-answer-set
@@ -196,7 +202,7 @@
   [{:keys [prompt]}]
   (let [_ (println prompt)
         _ (read-line)])
-  ;; TODO: replace this string with a map arg input
+  ;; TODO: replace this string with a map arg input 'successful-continue-msg'
   (when DEBUG-MODE-ON (println "Proceeding...")))
 
 
