@@ -82,27 +82,6 @@
   ((get item :status) dict))
 
 
-;; TODO: Move design notes out of doc-string into either a markdown cell or, perhaps, design-notes hashmap 
-;; TODO: modify stringify item to handle duplicate items by 
-;; conditionally appending text as follows, an example for an item 
-;; with the text `go for jog` that has been duplicated twice will 
-;; be rendered as `go for jog (dup #2)` and an item that is not a 
-;; duplicate will render as `go for jog`
-;; 🔤
-(defn stringify-item
-  "Converts an item map into a printable list-item string
-
-  Design Notes:
-  - This function uses composition to simplify caller readability
-  - This function also maintains a consistent function API with
-  built-in flexibility by using one map whose keys may change
-  over development ('hashmap associative destructuring'), rather
-  than locking the function into any fixed number of arguments
-  (i.e. this technique avoids PLOP)"
-  [{:keys [item dict]}] ;; :as input-data ;; (item-mark input-data)
-  (str "- [" (item-mark {:item item :dict dict}) "] " (get item :text)))
-
-
 ;; TODO: Test create-new-item function w/ just task text input where
 ;; the output item data status is expected to be "ready" (because this
 ;; is the first item being added to a list)
@@ -150,20 +129,49 @@
   "generates a duplicate of the inputted item. Items can be originals or
   duplicates, and duplicates can be duplicated 1 or more times.
 
-  Note: This function uses `is-duplicate?` for the conditional duplication logic"
-  [{:keys [input-item]}]
+  Optional arg map key `:input-status` enables caller to update status,
+  such as when creating a new item duplicate of a to-do item that has
+  work remaining, rather than a duplicate with status 'ready'.
+
+  Note: This function uses `is-duplicate?` for the conditional duplication logic."
+  [{:keys [input-item input-status]}]
   ;; use `dup-number` key-val to indicate the duplicate number, 
   ;; starting with 1 to indicate an item has been duplicated once
-  (if (is-duplicate? {:input-item input-item})
-    (update input-item :dup-number inc)
-    (assoc input-item :dup-number 1)))
+  (println "... generating duplicate item ...")
+  (let [step1 (if (is-duplicate? {:input-item input-item})
+                (update input-item :dup-number inc)
+                (assoc input-item :dup-number 1))
+        ;; It is necessary to remove :t-index from duplicate items because the
+        ;; :t-index allocation responsibility belongs to the af.list namespace
+        step2 (dissoc step1 :t-index)
+        step3 (when (some? input-status)
+                ;; Q: why does assoc work here but not update?
+                (assoc step2 :status input-status))
+        result (if (some? input-status) step3 step2)]
+    result))
 
 
-;; BAD IDEA: implement `duplicate-item` with optional append that also looks for a certain sequence of
-;;           characters, for example: 'go for jog', once stopped, can be duplicated to create
-;;           'go for jog (dup #1)', with the duplicates of the duplicate being 'go for jog (dup #2)',
-;;           'go for jog (dup #3)', etc.. --> This is a bad idea because it uses both string
-;;           programming and PLOP (place oriented programming) where a keyword and boolean flag would
-;;           suffice, and also mixes domains/concerns, where the desired end result is to be able to
-;;           tell if an item is a duplicate visually (rendered to the user), as well as programmatically
-;;           (via code by the program/programmer).
+;; TODO: Move design notes out of doc-string into either a markdown cell or, perhaps, design-notes hashmap 
+;; TODO: modify stringify item to handle duplicate items by 
+;; conditionally appending text as follows, an example for an item 
+;; with the text `go for jog` that has been duplicated twice will 
+;; be rendered as `go for jog (dup #2)` and an item that is not a 
+;; duplicate will render as `go for jog`
+;; 🔤
+(defn stringify-item
+  "Converts an item map into a printable list-item string
+
+  Design Notes:
+  - This function uses composition to simplify caller readability
+  - This function also maintains a consistent function API with
+  built-in flexibility by using one map whose keys may change
+  over development ('hashmap associative destructuring'), rather
+  than locking the function into any fixed number of arguments
+  (i.e. this technique avoids PLOP)"
+  [{:keys [item dict]}] ;; :as input-data ;; (item-mark input-data)
+  (let [item-mark (item-mark {:item item :dict dict})
+        cont-text (if (is-duplicate? {:input-item item})
+                    (str "cont. (x" (get item :dup-number) ") " )
+                    "")
+        item-text (get item :text)]
+    (str "- [" item-mark "] " cont-text item-text)))
