@@ -1,4 +1,6 @@
-(ns af.item)
+(ns af.item
+  (:require
+   [clojure.spec.alpha :as sa]))
 
 ;; TODO: conduct review on which functions are elevated to
 ;; non-private status, and how each namespace further exposes
@@ -30,6 +32,26 @@
    As a result of the above points, it can be calculated:
    - for any given day which items were completed in that day.
    - how long it took for X items to go from creation to completion")
+
+
+;; DONE: complete item spec stub
+(sa/def ::todo-item (sa/keys :req [::text ::status]
+                             :opt [::t-index ::dup-number]))
+(sa/def ::status #{:new :ready :done})
+(sa/def ::text string?)
+(sa/def ::t-index (sa/and number? #(>= % 0)))
+(sa/def ::dup-number (sa/and number? pos?))
+
+;; (sa/def ::cli-mark #{" " "o" "x"})
+(sa/valid? ::todo-item {::text "a" ::status :new})
+(sa/valid? ::todo-item {::text "b" ::status :ready})
+(sa/valid? ::todo-item {::text "c" ::status :done})
+(sa/valid? ::todo-item {::text "d"})
+(sa/valid? ::todo-item {::text "e" ::status :sweet})
+(sa/valid? ::todo-item {::text "f" ::status :new ::t-index 2 ::dup-number 1})
+(sa/valid? ::todo-item {::text "g" ::status :new ::t-index 2 ::dup-number 0})
+(sa/valid? ::todo-item {::text "h" ::status :new ::t-index 3})
+(sa/valid? ::todo-item {::text "i" ::status :new ::t-index -4})
 
 
 ;; TODO: update this function to use `update` instead of `assoc`
