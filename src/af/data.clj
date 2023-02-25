@@ -163,15 +163,17 @@ D17 Note: This to-do items collection was originally a hashmap, which then becam
 
 
 ;; TODO: assess whether this is still useful, rm if not, refactor if yes
-(def initial-domain-defaults
+#_(def initial-domain-defaults
   ;; original name   "initial-defaults"
   {:todo-item {:text EMPTY-STRING
                :status NEW-ITEM-STATUS
-               :t-index ENUM-PRE-INIT
-               :times-cloned ENUM-PRE-INIT}
+               ;; :t-index ENUM-PRE-INIT
+               ;; :times-cloned ENUM-PRE-INIT
+               }
    :todo-list {:LIST-list EMPTY-LIST 
-               :IDX-last-marked-ready ENUM-PRE-INIT
-               :IDX-last-done ENUM-PRE-INIT}})
+               ;; :IDX-last-marked-ready ENUM-PRE-INIT
+               ;; :IDX-last-done ENUM-PRE-INIT
+               }})
 
 ;; TODO: consider making FSM
 (def valid-interaction-states
