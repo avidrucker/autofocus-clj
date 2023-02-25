@@ -142,13 +142,14 @@ done - a fully filled-in circle like ⬤, brackets with an 'x' inside [x]
    })
 
 
-;; 2023_01_22 TIL: How to close a Vim window without quitting its associated/displayed buffer via `:q`
-#_(def initial-list-state [])
-
-#_(def EMPTY-LIST
+(def EMPTY-LIST
   ;; note: this was '() originally
   ;; TODO: rename this to EMPTY-TODO-LIST
   [])
+
+;; 2023_01_22 TIL: How to close a Vim window without quitting its associated/displayed buffer via `:q`
+(def initial-list-state EMPTY-LIST)
+
 
 #_(def NEW-ITEM-STATUS :new)
 
