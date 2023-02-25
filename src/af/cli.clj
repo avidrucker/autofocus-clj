@@ -56,10 +56,10 @@
 
 
 (def valid-ynq-answer-choices
-  #{"y" "Y" "q" "Q" "n" "N"})
+  #{"y" "Y" "q" "Q" "n" "N" "yes" "YES" "no" "NO" "quit" "QUIT"})
 
 (def valid-yn-answer-choices
-  #{"y" "Y" "n" "N"})
+  #{"y" "Y" "n" "N" "yes" "YES" "no" "NO"})
 
 
 (defn convert-answer-letter-to-keyword
