@@ -286,13 +286,13 @@ D17 Note: This to-do items collection was originally a hashmap, which then becam
   "Base menu options are available by default, and will display every time the menu is rendered. This is in contrast with situation-dependent (ie. conditional) menu options, such as PRIORITIZE and DO.
 
   Note: Menu options include both AutoFocus list actions as well application actions."
-  [ADD ABOUT EXAMPLE HOW-TO QUIT])
+  [ADD ABOUT QUIT]) ;; EXAMPLE HOW-TO
 
 
 ;; DONE: implement the sorting of the menu by custom ordering/ranking
 (def all-menu-options-sorted
   "used to sort menu options before they are displayed, originally named `menu-options-order`"
-  [ADD PRIORITIZE DO ABOUT EXAMPLE HOW-TO QUIT])
+  [ADD PRIORITIZE DO ABOUT QUIT]) ;; EXAMPLE HOW-TO QUIT
 
 
 ;; TODO: relocate to application interface data namespace
