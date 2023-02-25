@@ -68,6 +68,9 @@
     "Q" :quit
     "Y" :yes
     "N" :no
+    "YES" :yes
+    "NO" :no
+    "QUIT" :quit
     :error-code-003))
 
 
