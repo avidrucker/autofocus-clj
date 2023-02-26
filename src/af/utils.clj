@@ -1,5 +1,6 @@
 (ns af.utils)
 
+
 (defn print-and-return
   "Potentially useful as a debugging function, also useful for cases where printing to the console before returning a value is desired."
   [{:keys [input-string return-item is-debug? debug-active?]}]
@@ -13,6 +14,7 @@
     (println input-string))
   return-item)
 
+
 (defn non-neg-int?
   "returns true if a number is an integer AND is 0 or greater
 
@@ -22,8 +24,8 @@ Note: This function appears to fail on positive decimal numbers that are equival
   ;; (comp (not (neg?)) integer?)
   (and (integer? n) (>= n 0)))
 
-;; TODO: conver this to a test
-((every-pred true?) 
+;; TODO: convert this to a test
+#_((every-pred true?) 
  (non-neg-int? 5) 
  (non-neg-int? 0) 
  ((every-pred false?)
@@ -36,13 +38,15 @@ Note: This function appears to fail on positive decimal numbers that are equival
   ;; (non-neg-int? 5.0) ;; failing test case... probably though, this test does not matter.
   ))
 
+
 (defn index-val? [n]
   ;; DONE: Implement index? to represent the accepted range of valid *and* invalid index values
   ;; TODO: rename this to be valid-index?
   ;; TODO: confirm that this function always returns only true or false
   (and (integer? n) (>= n -1)))
 
-(and ;; Q: What are the diffs between `and` and `(every-pred true?) ` 
+;; TODO: convert this to a test
+#_(and ;; Q: What are the diffs between `and` and `(every-pred true?) ` 
  ;; TODO: convert this `and` block to a series of `is` tests
  (index-val? 5) 
  (index-val? 0)
@@ -54,24 +58,25 @@ Note: This function appears to fail on positive decimal numbers that are equival
  )
 
 
-  (defn find-first
-   ;; https://stackoverflow.com/a/10192733
-   ;; TODO: relocate to utils namespace
-   ;; TODO: experiment using 'some' instead of 'first filter', see https://clojuredocs.org/clojure.core/some#example-542692c6c026201cdc326940
-    [pred-fn coll]
-    (first (filter pred-fn coll)))
+(defn find-first
+  ;; https://stackoverflow.com/a/10192733
+  ;; TODO: relocate to utils namespace
+  ;; TODO: experiment using 'some' instead of 'first filter', see https://clojuredocs.org/clojure.core/some#example-542692c6c026201cdc326940
+  [pred-fn coll]
+  (first (filter pred-fn coll)))
 
-  (defn in-bounds-inclusive?
-   ;; TODO: confirm that this function works as expected
-   ;; TODO: relocate to utils namespace
-    "returns true if a number if between a min and a max, inclusive"
-    [{:keys [valid-floor valid-max input-n]}]
-    ;; TODO: test removing `if-true-false` after regression tests have been made to compare results, refactor as desired
-    ;; TODO: investigate if kondo-clj would find  (if x true false) to be an 'anti-pattern' or 'redundant'
-    ;; #_(and (>= input-n valid-floor) (<= input-n valid-max))
-    (if (and (>= input-n valid-floor) (<= input-n valid-max))
-      true
-      false))
+
+(defn in-bounds-inclusive?
+  ;; TODO: confirm that this function works as expected
+  ;; TODO: relocate to utils namespace
+  "returns true if a number if between a min and a max, inclusive"
+  [{:keys [valid-floor valid-max input-n]}]
+  ;; TODO: investigate if kondo-clj would find  (if x true false) to be an 'anti-pattern' or 'redundant'
+  (and (>= input-n valid-floor) (<= input-n valid-max))
+  ;; (if (and (>= input-n valid-floor) (<= input-n valid-max))
+  ;;   true
+  ;;   false)
+  )
 
 
 #_(true?
@@ -91,3 +96,12 @@ Note: This function appears to fail on positive decimal numbers that are equival
 ;;   maria.user/list-1
 ;;   maria.user/demo-list-1
 ;; )
+
+
+;; IDEA: TODO: create a custom debug macro that takes in a collection
+;;       of bindings/names/symbols, and adds each one into a single
+;;       println statement as follows:
+;;       (println ["binding-1-name: " binding-1-value
+;;                 "binding-2-name: " binding-2-value
+;;                 ...])
+
