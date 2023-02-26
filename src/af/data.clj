@@ -1,7 +1,6 @@
 (ns af.data
   ;;  "It's just data."
   ;; Domain model
-  ;; TODO: review namespace for privatization
   ;; TODO: review namespace for data spec candidates
   )
 
