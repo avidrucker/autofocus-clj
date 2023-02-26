@@ -5,6 +5,9 @@
    [clojure.string :as s]))
 
 
+;; TODO: review namespace for privatization to strengthen API boundaries
+
+
 (def DEBUG-MODE-ON false)
 
 
@@ -385,7 +388,7 @@ to understand/read? A: Yes, it did.
        "' more than '" priority-item-text "'?"))
 
 
-;; TODO: refactor codebase to replace (not (nil?)) idiom with (some?)
+;; DONE: refactor codebase to replace (not (nil?)) idiom with (some?)
 ;; TODO: refactor usage of this function to make it private (see cli.clj line 329)
 (defn get-priority-item-from-list
   [{:keys [input-list]}]
@@ -474,34 +477,31 @@ to understand/read? A: Yes, it did.
     result))
 
 
-;;;; TODO: fix bug where prioritizable lists are not correctly recognized as such
-;; TODO: compare with subvec implementation in this af.list namespace for a potentially terser/more concise implementation
 (defn is-prioritizable-list?
+  "A prioritizable list has a priority item and 
+   has new items after the priority item."
   [{:keys [input-list]}]
-  ;; A prioritizable list has a priority item *and* has new items
-  ;; after the priority item --> In code, this can be abbreviated to
-  ;;     `get-first-new-item-after-priority-item` returns not nill
-    ;; 'index-of-first-prioritizable' exists
-  ;; (not (nil? (get-index-of-first-new-item-after-priority-item {:input-list input-list})))
-  (let [has-priority-item? (not (nil? (get-priority-item-from-list
-                            {:input-list input-list})))
+  (let [has-priority-item? (some? (get-priority-item-from-list
+                                   {:input-list input-list}))
 
-        index-result (when has-priority-item? 
+        ;; TODO: investigate, is the `when` form wrapper here necessary?
+        index-result (when has-priority-item?
                        (get-index-of-first-new-item-after-priority-item
                         {:input-list input-list}))
-        
-        has-new-item-after-priority-item?
-        (some? index-result)
-        
+
+        has-new-item-after-priority-item? (some? index-result)
+
         ;; println debugging
-        _        (when DEBUG-MODE-ON (println ["=========="
-                           "\n!* has-priority-item?: " has-priority-item?
-                           "\n!* index-result: " index-result
-                           "\n!* has-new-item-after-priority-item?: " has-new-item-after-priority-item?
-                           "\n=========="]))
-        ]
-    ((every-pred true?) has-priority-item? has-new-item-after-priority-item?)
-    ))
+        ;; TODO: see if you can write the following as a function, if you cannot
+        ;;       write it as a function, see if you can write it as a macro
+        _        (when DEBUG-MODE-ON 
+                   (println ["=========="
+                             "\n!* has-priority-item?: " has-priority-item?
+                             "\n!* index-result: " index-result
+                             "\n!* has-new-item-after-priority-item?: " has-new-item-after-priority-item?
+                             "\n=========="]))]
+    ;; Q: What are the differences between `(every-pred true?)` and `and`
+    (and has-priority-item? has-new-item-after-priority-item?)))
 
 
 (defn list-and-cursor-to-question 
