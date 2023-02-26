@@ -13,6 +13,10 @@
 ;; TODO: relocate string constants to af.data namespace
 ;; TODO: evaluate whether calc and utils should be merged or kept separate
 ;; TODO: review entire code base for (not (nil?)) to refactor/replace with (some?)
+;; TODO: review namespace for privatization
+;; TODO: mark whitespace only text inputs for items as invalid text entry, 
+;;       and force the user to input non-whitespace text (i.e. sanitize inputs by 
+;;       trimming them)
 
 
 (def DEBUG-MODE-ON 
@@ -59,9 +63,9 @@
 
 ;; TODO: refactor this function to take key-val map of {:invalid-input :invalid-confirm :re-prompt} where,
 ;;       instead of passing x and y, the prompt is generated externally and passed in
-(defn- cli-invalid-input-notification-and-request [input x y]
+(defn- invalid-input-msg-and-prompt [input lower upper]
   (println (str (gen-invalid-input-detected-msg input) d/NEWLINE
-                "Please enter a digit between " x " and " y ","
+                "Please enter a digit between " lower " and " upper ","
                 d/NEWLINE "and then press the ENTER key:")))
 
 
@@ -69,27 +73,35 @@
 ;; TODO: refactor this function so that its contents know nothing about menus, choices, nor does it decide its own printout messages, instead, it takes in print out messages as functions and passes to them the appropriate arguments, for example `if-cli-choice-confirm-exists-then-print-with-input-arg`, and so on for `cli-input-confirm`, `cli-invalid-input-detected, etc.`
 (defn- cli-get-number-in-range-inclusive
   "Gets a number ranging from x to y (inclusive) from the user via keyboard input and stdin. Optionally takes a map from which to direct the printing out of prompts and confirmations."
-  [x y {:keys [choice-confirm-func invalid-input-re-request]}]
+  [{:keys [lower upper choice-confirm-func invalid-input-re-request]}]
   ;; TODO: implement optional prompt for this function
   ;; (println (str "Please enter a number from " x " to " y ": "))
   ;; TIL: How to convert a non-literal string into a regular expression, via re-pattern
-  (let [match-str (re-pattern (str "^[" x "-" y "]$"))]
+  (let [match-str (re-pattern (str "^[" lower "-" upper "]$"))]
     (loop []
       (let [input (read-line)]
-        (if (and (not (nil? input)) (re-matches match-str input))
+        (if (and (some? input) (re-matches match-str input))
           (do
             (choice-confirm-func input)
+            ;; TODO: refactor so that way this can run as a ClojureScript web app
             (Integer/parseInt input))
           (do
             ;; TODO: split the following printout into 2 separate printouts
-            (invalid-input-re-request input x y)
+            ;; TODO: refactor to remove imported function which causes a loss of 
+            ;;       intospection into the function contract
+            ;;       Q: Is this an example relating to referential transparency?
+            (invalid-input-re-request input lower upper)
             (recur)))))))
 
-;; TODO: instead of matching on valid letters, you can match on valid keys
+;; TODO: instead of matching on valid letters, you could match on valid keys
+;;       Q: For this application, what would be more effective, to validate 
+;;          on strings, on keys, or neither?
+;; TODO: rename to valid-ternary-choices
 (def valid-ynq-answer-choices
   #{"y" "Y" "q" "Q" "n" "N"
     "yes" "YES" "no" "NO" "quit" "QUIT"})
 
+;; TODO: rename to valid-binary-choices
 (def valid-yn-answer-choices
   #{"y" "Y" "n" "N" "yes" "YES" "no" "NO"})
 
@@ -123,22 +135,15 @@
     (let [_     (println input-question)
           input (read-line)]
       (if (contains? valid-answers input)
-        (u/print-and-return {:input-string (str "Nice! You answered '" input "'!")
-                             :is-debug? false
-                             :return-item input})
+        (u/print-and-return
+         {:input-string (str "Nice! You answered '" input "'!")
+          :is-debug? true
+          :return-item input})
         (do
-          ;; TODO: if possible, replace the following `do-print-return` 
-          ;;       with your custom `print-and-return` utility function
           (println (str "You entered '" input "'."))
           (println invalid-input-response)
           (recur))))))
 
-
-;; TODO: relocate to af.demo namespace
-#_(def demo-question
-  {:input-question "Do you like apples more than bananas? Please answer 'y' for 'yes', 'n' for 'no', or 'q' for 'quit: "
-   :valid-answers valid-ynq-answer-choices
-   :invalid-input-response INVALID-YNQ-INPUT-RESPONSE})
 
 ;; testing the asking of a y/n/q question and then converting it to a keyword
 ;; (convert-answer-letter-to-keyword (cli-ask-yes-no-quit-question demo-question))
@@ -193,25 +198,12 @@
           :return-item next-list})))))
 
 
-(comment
-  (def review-test-list-1
-    [{:t-index 0, :text "apple", :status :ready}
-     {:t-index 1, :text "blueberry", :status :new}
-     {:t-index 2, :text "cherry", :status :new}])
-
-  (def round-test-1
-    {:input-list review-test-list-1
-     :input-cursor-index 1})
-
-  (cli-conduct-prioritization-review round-test-1)
-)
-
-
 ;; DONE: test using this with focus/do mode, as well as to confirm 
 ;; and then close out the about/read-me/text-exposition sections of 
 ;; the application (to then return back to the menu)
 (defn- cli-press-enter-key-to-continue
   [{:keys [prompt]}]
+  ;; TODO: refactor this to not use `let` if it is not needed
   (let [_ (println prompt)
         _ (read-line)])
   ;; TODO: replace this string with a map arg input 'successful-continue-msg'
@@ -223,18 +215,17 @@
   Note: Prompt is optional."
   [{:keys [prompt]}]
   (loop []
-    (when (not (nil? prompt))
-      (println prompt))
+    ;; TODO: refactor out not-nil? to be some? instead
+    (when (some? prompt) (println prompt))
     (let [input (read-line)]
-      (if (and (not (nil? input)) (seq input))
+      (if (and (some? input) (seq input))
         (u/print-and-return {:input-string (str "You entered '" input "'.")
                              :is-debug? false
                              :return-item input})
-        ;; TODO: see if using `print-and-return` works here with recur as the `:return-item`
         (do
-           ;; TODO: change text to "Input 'x' is not valid."
-          (println (str "Input of '" input
-                        "' does not appear to be valid."))
+           ;; TODO: Replace the following with a string generator function
+          (println (str "Input '" input
+                        "' is not valid."))
           (recur))))))
 
 
@@ -242,9 +233,8 @@
 (defn- single-q?
   "used to determine if a CLI user is attempting to quit when inputting text"
   [input-text]
-  (or 
-   (= (s/lower-case input-text) "q")
-   (= (s/lower-case input-text) "quit")))
+  (or (= (s/lower-case input-text) "q")
+      (= (s/lower-case input-text) "quit")))
 
 
 (defn- cli-quittable-get-text-from-user
@@ -265,9 +255,10 @@
 ;;       (matching the naming conventions in the project)
 (defn- cli-display-menu [menu-options-input menu-mappings]
   (println (str d/MAIN-MENU-HEADER
-                (calc/gen-menu-string {:menu-options menu-options-input
-                                       :menu-mappings menu-mappings
-                                       :separator d/NEWLINE}))))
+                (calc/gen-menu-string
+                 {:menu-options menu-options-input
+                  :menu-mappings menu-mappings
+                  :separator d/NEWLINE}))))
 
 
 ;; TODO: refactor/convert this function into string generation 
@@ -275,37 +266,31 @@
 ;; Suggested new name `gen-selection-prompt-with-number-input`
 (defn- cli-ask-for-menu-input
   [options-cnt]
+  ;; TODO: replace the following with string generator sandwich function
   (println (str
             "Select by number from the above menu [1-"
             options-cnt "]: ")))
-
-;; TODO: create a custom debug macro that takes in a collection of bindings/names/symbols,
-;;       and adds each one into a single println statement as follows:
-;;       (println ["binding-1-name: " binding-1-value
-;;                 "binding-2-name: " binding-2-value
-;;                 ...])
 
 
 ;; TODO: convert into pure func by taking in args, not global state
 (defn cli-do-menu-cycle
   "display the menu and get user's menu choice"
-  [{:keys [input-menu ;; TODO: note here that this is a list of keywords
+  [{:keys [;; TODO: REFACTOR: pass into `cli-do-menu-cycle` the base menu options, rather than the full list, and add more menu options on, rather than taking them away, for simpler, more readable code  
+           input-menu ;; TODO: note here that this is a list of keywords
            input-menu-strings-map]}]
-  (let [menu-length (count input-menu)
-        ;;_      (println ["menu length: " menu-length]) ;; println debugging
-        ]
+  (let [menu-length (count input-menu)]
     (cli-display-menu input-menu input-menu-strings-map)
     (cli-ask-for-menu-input menu-length)
-    (get input-menu
-       ;; TODO: refactor cli-get-number-in-range-inclusive call 
+    (let [menu-choice-number
+         ;; TODO: refactor cli-get-number-in-range-inclusive call 
          ;;     signature to have clearer inputs ('lower' & 
          ;;     'upper' instead of 'x' & 'y')
-         (dec (cli-get-number-in-range-inclusive
-               1
-               menu-length
-               {:choice-confirm-func cli-choice-confirm
-                :invalid-input-re-request 
-                cli-invalid-input-notification-and-request})))))
+          (cli-get-number-in-range-inclusive
+           {:lower 1
+            :upper menu-length
+            :choice-confirm-func cli-choice-confirm
+            :invalid-input-re-request invalid-input-msg-and-prompt})]
+      (get input-menu (dec menu-choice-number)))))
 
 
 (defn- cli-conduct-add-action
@@ -338,6 +323,8 @@
   (println "\033[0;0H"))
 
 
+;; TODO: enable the user to press *any* key when in a non-interactive page
+;;       to return back to the main menu, rather than just the ENTER key 
 (defn- print-wait-on-enter-key-then-return 
   [{:keys [output-text continue-prompt return-item 
            is-debug? debug-active?]}]
