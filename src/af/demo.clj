@@ -225,4 +225,30 @@
 ;;        :status :ready}})
    
 
+#_(def demo-question
+  {:input-question "Do you like apples more than bananas? Please answer 'y' for 'yes', 'n' for 'no', or 'q' for 'quit: "
+   :valid-answers valid-ynq-answer-choices
+   :invalid-input-response INVALID-YNQ-INPUT-RESPONSE})
 
+
+;; early IO test for (-main)
+;; (println "-main with" args)
+;; (let [input (read-line)]
+;;   (if (or (= input "yes") (= input "no"))
+;;     (println "Thanks for your input")
+;;     (println "Invalid input. Please enter either 'yes' or 'no'")))
+
+
+;; TODO: relocate to demo namespace
+#_(comment
+  (def review-test-list-1
+    [{:t-index 0, :text "apple", :status :ready}
+     {:t-index 1, :text "blueberry", :status :new}
+     {:t-index 2, :text "cherry", :status :new}])
+
+  (def round-test-1
+    {:input-list review-test-list-1
+     :input-cursor-index 1})
+
+  (cli-conduct-prioritization-review round-test-1)
+)
