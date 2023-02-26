@@ -144,27 +144,31 @@
 ;; (convert-answer-letter-to-keyword (cli-ask-yes-no-quit-question demo-question))
 
 
-(defn cli-conduct-prioritization-review ;; get-and-submit-single-comparison
-  "original name: get-and-submit-single-comparison"
+(defn cli-conduct-prioritization-review 
+  "original name: get-and-submit-single-comparison
+
+  0. assuming that this list is a prioritizable list...
+  1. ask the user, do they want to do current-item more than priority-item
+  2. take in the user's answer, where the valid answer choices are 'n', 'y', 'q', 'yes', 'no', or 'quit' where answers are case-insensitive
+  3. apply the user's answer to return back a result map which contains:
+     - the new list (modified if user's answer was `:yes`, otherwise unmodified)
+     - the next cursor (which may be `nil` if there are no more items to review/compare/prioritize)
+    - the user's intent to continue (`true` for `:yes` and `:no` answers, `false` if the user's answer was `:quit`) ;; `intent-to-continue`
+  "
   [{:keys [input-list input-cursor-index]}]
-  ;; 0. assuming that this list is a reviewable/prioritizable list...
-  ;; 1. ask the user, do they want to do current-item more than priority-item
-  ;; 2. take in the user's answer, where the valid answer choices are 'y', 'Y', 'q', 'Q', 'n', or 'N'
-  ;; 3. apply the user's answer to return back a result map which contains:
-  ;;    - the new list (modified if user's answer was `:yes` or unmodified otherwise)
-  ;;    - the next cursor (which may be `nil` if there are no more items to review/compare/prioritize)
-  ;;    - the user's intent to continue (`true` for `:yes` and `:no` answers, `false` if the user's answer was `:quit`) ;; `intent-to-continue`
   (println d/REVIEW-START) ;; TODO: convert to custom debug statement (when DEBUG-MODE-ON ...)
   (loop [current-list input-list
          current-index input-cursor-index]
-    (let [;; get the user's answer to the comparison question
+    (let [;; generate the question to ask the user
+          current-question (l/get-single-comparison
+                            {:input-list current-list
+                             :input-cursor-index current-index})
+
+          ;; get the user's answer to the comparison question
           current-answer
           (convert-answer-letter-to-keyword
            (cli-ask-question-with-limited-answer-set
-            {:input-question
-             (l/get-single-comparison
-              {:input-list current-list
-               :input-cursor-index current-index})
+            {:input-question current-question
              :valid-answers valid-ynq-answer-choices
              :invalid-input-response INVALID-YNQ-INPUT-RESPONSE}))
 
@@ -174,15 +178,14 @@
                                   :input-cursor-index current-index
                                   :answer-input current-answer})
 
-          ;; destructure submission response back into usable bindings
-          {:keys [next-list ;; originally: updated-list / output-list 
-                  next-cursor-index ;; originally: updated-cursor-index / next-cursor
-                  user-is-quitting? ;; originally: quitting-comparison
-                  ]} submission-response
+          ;; destructure submission response back into suitable bindings
+          {:keys [next-list next-cursor-index user-is-quitting?]}
+          submission-response
 
-          ;; `comparing?` will be our sentinel value to terminate review/prioritization sessions
-          comparing?         (and next-cursor-index (not user-is-quitting?))] ;; TODO: clarify intent of code here with a comment
-      (if comparing?
+          ;; `continue-comparing?` is the sentinel value to stop prioritization sessions
+          continue-comparing? (and next-cursor-index (not user-is-quitting?))] ;; TODO: clarify intent of code here with a comment
+      
+      (if continue-comparing?
         (recur next-list next-cursor-index)
         (u/print-and-return
          {:input-string d/REVIEW-END 
