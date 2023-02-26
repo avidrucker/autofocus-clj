@@ -161,6 +161,7 @@ C. current and previous jump link"
         [:h2 {:id (name current-id)
               :style {:padding-top "3em"}} (str current-id ": " current-name)] ;; {:id (name current-id)}
         
+        ;; TODO: replace not-nil? idiom with some?
         has-prev-jump (not (nil? prev-name))
         has-next-jump (not (nil? next-name)) 
         ;; TODO: locate edge case bug for widget rendering
