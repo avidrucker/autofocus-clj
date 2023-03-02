@@ -26,6 +26,7 @@
 ;; Question: How can I diff between two vectors of keywords in Clojure?
 ;; TODO: implement menu options list generation dynamically based on list state
 ;; TODO: refactor this funmction to take in bools `prioritizable-list?` and `doable-list?` as map arg inputs rather than as internally calculated values (ie. calc externally and pass in instead)
+;; TODO: deprecate this function to instead use `calc-valid-menu-options`
 (defn- invalid-menu-options
   "This is used a helper to `get-valid-menu-options` by
   indicating which menu options should be removed."
@@ -39,8 +40,6 @@
       ;; remove both options
       (and (not prioritizable?) (not actionable?))
       [d/PRIORITIZE d/DO]))
-
-
 
 
 (defn get-valid-menu-options
@@ -77,6 +76,30 @@
             "coll to be ordered: " input-unsorted
             "correct ordering: " input-order])
   (sort-by #(find-thing % input-order) input-unsorted))
+
+
+;; TODO: replace the old `get-valid-menu-options` function
+;;       with the new `calc-valid-menu-options` function
+;; DONE: create a threading macro function which
+;;       appends valid menu choices onto the base menu 
+(defn calc-valid-menu-options
+  [{:keys [input-base-menu prioritizable? actionable?]}]
+  (let [menu-additions (-> #{}
+                           (conj (when prioritizable? d/PRIORITIZE))
+                           (conj (when actionable? d/DO)))
+        combined-menu (cs/union (set input-base-menu) menu-additions)
+        _             (println ["menu additions" menu-additions
+                                "combined menu" combined-menu])
+        sorted-final-menu (sort-menu-options
+                           {:input-unsorted combined-menu
+                            :input-order d/all-menu-options-sorted})]
+    (remove nil? sorted-final-menu)))
+
+
+;; TODO: convert this to a test
+#_(calc-valid-menu-options {:input-base-menu d/base-menu-options
+                          :prioritizable? true
+                          :actionable? true})
 
 
 ;; REPL testing
