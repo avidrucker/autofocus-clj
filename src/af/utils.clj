@@ -15,35 +15,10 @@
   return-item)
 
 
-(defn non-neg-int?
-  "returns true if a number is an integer AND is 0 or greater
-
-Note: This function appears to fail on positive decimal numbers that are equivalent to integers, such as 5.0 ... This is not a critical issue, as non-integers are outside of project scope."
+(defn valid-index?
+  "returns true for valid index values, else returns false"
   [n]
-  ;; Q: What are other ways this function can be written (e.g. in idiomatic, effective, and/or simple ways)?
-  ;; (comp (not (neg?)) integer?)
   (and (integer? n) (>= n 0)))
-
-;; TODO: convert this to a test
-#_((every-pred true?) 
- (non-neg-int? 5) 
- (non-neg-int? 0) 
- ((every-pred false?)
-  (non-neg-int? -2)
-  (non-neg-int? 3.14159)
-  (non-neg-int? nil)
-  (non-neg-int? false)
-  (non-neg-int? true)
-  (non-neg-int? [])
-  ;; (non-neg-int? 5.0) ;; failing test case... probably though, this test does not matter.
-  ))
-
-
-(defn index-val? [n]
-  ;; DONE: Implement index? to represent the accepted range of valid *and* invalid index values
-  ;; TODO: rename this to be valid-index?
-  ;; TODO: confirm that this function always returns only true or false
-  (and (integer? n) (>= n -1)))
 
 ;; TODO: convert this to a test
 #_(and ;; Q: What are the diffs between `and` and `(every-pred true?) ` 
@@ -68,15 +43,9 @@ Note: This function appears to fail on positive decimal numbers that are equival
 
 (defn in-bounds-inclusive?
   ;; TODO: confirm that this function works as expected
-  ;; TODO: relocate to utils namespace
   "returns true if a number if between a min and a max, inclusive"
   [{:keys [valid-floor valid-max input-n]}]
-  ;; TODO: investigate if kondo-clj would find  (if x true false) to be an 'anti-pattern' or 'redundant'
-  (and (>= input-n valid-floor) (<= input-n valid-max))
-  ;; (if (and (>= input-n valid-floor) (<= input-n valid-max))
-  ;;   true
-  ;;   false)
-  )
+  (and (>= input-n valid-floor) (<= input-n valid-max)))
 
 
 #_(true?
