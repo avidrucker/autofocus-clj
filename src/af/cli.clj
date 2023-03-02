@@ -13,7 +13,7 @@
 ;; TODO: evaluate whether calc and utils should be merged or kept separate
 ;; TODO: review entire code base for (not (nil?)) to refactor/replace with (some?)
 ;; TODO: review namespace for privatization
-;; TODO: mark whitespace only text inputs for items as invalid text entry, 
+;; DONE: mark whitespace only text inputs for items as invalid text entry, 
 ;;       and force the user to input non-whitespace text (i.e. sanitize inputs by 
 ;;       trimming them)
 
@@ -23,10 +23,12 @@
   false)
 
 
+;; TODO: implement 0.5 second 'print and clear' for confirm messages to show, and
+;;       then 'return' back to the main view (list and menu)
 ;; STRING CONSTANTS
 ;; TODO: relocate this & other cli copy text to top of cli namespace
 (def cli-texts
-  {:adding {:prompt "Please enter the text for your to-do item:"
+  {:adding {:prompt "Please enter the text for your to-do item (or type 'q' to quit):"
             :cancel-confirm "... cancelling adding new item to list..."
             :success-confirm "...adding item to list..."}})
 
@@ -105,7 +107,7 @@
 (def valid-yn-answer-choices
   #{"y" "Y" "n" "N" "yes" "YES" "no" "NO"})
 
-(defn convert-answer-letter-to-keyword
+(defn- convert-answer-letter-to-keyword
   [input-letter]
   (case (s/upper-case input-letter)
     "Q" :quit
@@ -150,19 +152,18 @@
 ;; (convert-answer-letter-to-keyword (cli-ask-yes-no-quit-question demo-question))
 
 
-(defn cli-conduct-prioritization-review 
-  "original name: get-and-submit-single-comparison
-
-  0. assuming that this list is a prioritizable list...
-  1. ask the user, do they want to do current-item more than priority-item
-  2. take in the user's answer, where the valid answer choices are 'n', 'y', 'q', 'yes', 'no', or 'quit' where answers are case-insensitive
-  3. apply the user's answer to return back a result map which contains:
-     - the new list (modified if user's answer was `:yes`, otherwise unmodified)
-     - the next cursor (which may be `nil` if there are no more items to review/compare/prioritize)
-    - the user's intent to continue (`true` for `:yes` and `:no` answers, `false` if the user's answer was `:quit`) ;; `intent-to-continue`
-  "
+;;;; refactoring question: How can I extract `conduct-prioritization` func logic
+;;   to af.list namespace and keep here just the necessary IO logic?
+(defn cli-conduct-prioritization-review
+  "0. assume that the inputted  list is a prioritizable list...
+  1. ask the user, do they want to do `current-item` more than `priority-item`
+  2. take in the user's answer, where the valid answer choices are 'n', 'y', 'q', 'yes', 'no', or 'quit', where answers are case-insensitive
+  3. take in and use the user's answer to return back a result map which contains:
+    - the new list (modified if user's answer was `:yes`, otherwise unmodified)
+    - the next cursor (which may be `nil` if there are no more suitable `:new` items left prioritize)
+    - the user's intent to continue (`true` for `:yes` and `:no` answers, `false` if the user's answer was `:quit`) ;; `intent-to-continue`"
   [{:keys [input-list input-cursor-index]}]
-  (println d/REVIEW-START) ;; TODO: convert to custom debug statement (when DEBUG-MODE-ON ...)
+  (when DEBUG-MODE-ON (println d/REVIEW-START)) ;; println debugging 
   (loop [current-list input-list
          current-index input-cursor-index]
     (let [;; generate the question to ask the user
@@ -184,25 +185,32 @@
                                   :input-cursor-index current-index
                                   :answer-input current-answer})
 
+          ;;;; refactoring note: If the current answer is "q" or "quit", we could end the prioritization session here. Would this improve the code significantly, in terms of readability or performance?
+          
           ;; destructure submission response back into suitable bindings
           {:keys [next-list next-cursor-index user-is-quitting?]}
           submission-response
 
-          ;; `continue-comparing?` is the sentinel value to stop prioritization sessions
-          continue-comparing? (and next-cursor-index (not user-is-quitting?))] ;; TODO: clarify intent of code here with a comment
-      
+          ;; if there is another :new item to compare against below the current index,
+          ;; and the user is not quitting, then, the prioriziation session will continue
+          continue-comparing? ;; sentinel value which, when false, will halt a prioritization session 
+          (and next-cursor-index (not user-is-quitting?))]
+
       (if continue-comparing?
+        ;; continue comparing with updated list and cursor position
         (recur next-list next-cursor-index)
+        ;; stop the priorization session and return the updated list
         (u/print-and-return
-         {:input-string d/REVIEW-END 
+         {:input-string d/REVIEW-END
           :is-debug? false
           :return-item next-list})))))
 
 
-;; DONE: test using this with focus/do mode, as well as to confirm 
-;; and then close out the about/read-me/text-exposition sections of 
-;; the application (to then return back to the menu)
 (defn- cli-press-enter-key-to-continue
+  "This function halts program execution and waits for the user to
+  tap the ENTER key. Tapping the ENTER key resumes program execution.
+  Used to enable the user to read text screens, as well as to wait
+  for the user to indicate that they are done working on a task."
   [{:keys [prompt]}]
   ;; TODO: refactor this to not use `let` if it is not needed
   (let [_ (println prompt)
@@ -216,18 +224,16 @@
   Note: Prompt is optional."
   [{:keys [prompt]}]
   (loop []
-    ;; TODO: refactor out not-nil? to be some? instead
     (when (some? prompt) (println prompt))
     (let [input (read-line)
           sanitized (s/trim input)]
       (if (and (some? sanitized) (seq sanitized))
-        (u/print-and-return {:input-string (str "You entered '" sanitized "'.")
-                             :is-debug? false
-                             :return-item sanitized})
+        (u/print-and-return
+         {:input-string (str "You entered '" sanitized "'.")
+          :is-debug? true
+          :return-item sanitized})
         (do
-           ;; TODO: Replace the following with a string generator function
-          (println (str "Input '" sanitized
-                        "' is not valid."))
+          (println (gen-invalid-input-detected-msg input))
           (recur))))))
 
 
@@ -295,14 +301,24 @@
       (get input-menu (dec menu-choice-number)))))
 
 
+;;;; refactoring candidate
 (defn- cli-conduct-add-action
   [{:keys [input-list prompt cancel-confirm success-confirm]}]
   (let [input-text (cli-quittable-get-text-from-user
                     {:prompt prompt})]
+    ;; TODO: determine whether `cli-conduct-add-action` should handle empty
+    ;; inputs, as `cli-quittable-get-text-from-user` seems to already be
+    ;; handling the IO and decision layer (and more specifically, preventing
+    ;; invalid input, and listening for the command to 'abort' on adding),
+    ;; whereas I'd like the add function to simply add
     (if (nil? input-text)
+      ;; TODO: if there is no input text, the 'invalid input' message should
+      ;; be displayed, and the add action should not be cancelled, but this
+      ;; code seems to imply that it would be. fix code writing to clearly
+      ;; express `cli-conduct-add-action` function's intent and functionality
       ;; return the list as-is
       (u/print-and-return
-       {:input-string cancel-confirm
+       {:input-string cancel-confirm 
         :is-debug? false
         :return-item input-list})
       ;; return list w/ new item appended
