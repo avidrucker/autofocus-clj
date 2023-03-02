@@ -4,7 +4,6 @@
    [af.data :as d]
    [af.calc :as calc]
    [af.list :as l]
-   [af.item :as i]
    [clojure.string :as s]
    ))
 
@@ -311,11 +310,10 @@
        {:input-string success-confirm
         :is-debug? true
         :debug-active? DEBUG-MODE-ON
-        :return-item (l/add-item-to-list
-                      {:input-item
-                       (i/create-new-item-data
-                        {:input-text input-text})
-                       :target-list input-list})}))))
+        :return-item (l/conduct-add
+                      {:input-list input-list
+                       :input-text input-text})
+        }))))
 
 
 (defn- cli-clear-buffer []

@@ -799,3 +799,12 @@ to understand/read? A: Yes, it did.
                               :answer-input :no}))
   ])
 
+
+(defn conduct-add
+  "[PUBLIC LIST API] This function takes in a list and some item text, and
+  returns back a new list with a newly generated item appended to said list."
+  [{:keys [input-list input-text]}]
+  (add-item-to-list {:input-item (i/create-new-item-data
+                                  {:input-text input-text})
+                     :target-list input-list}))
+
