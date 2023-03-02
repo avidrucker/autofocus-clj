@@ -79,18 +79,19 @@
   ;; TIL: How to convert a non-literal string into a regular expression, via re-pattern
   (let [match-str (re-pattern (str "^[" lower "-" upper "]$"))]
     (loop []
-      (let [input (read-line)]
-        (if (and (some? input) (re-matches match-str input))
+      (let [input (read-line)
+            sanitized (s/trim input)]
+        (if (and (some? sanitized) (re-matches match-str sanitized))
           (do
-            (choice-confirm-func input)
+            (choice-confirm-func sanitized)
             ;; TODO: refactor so that way this can run as a ClojureScript web app
-            (Integer/parseInt input))
+            (Integer/parseInt sanitized))
           (do
             ;; TODO: split the following printout into 2 separate printouts
             ;; TODO: refactor to remove imported function which causes a loss of 
             ;;       intospection into the function contract
             ;;       Q: Is this an example relating to referential transparency?
-            (invalid-input-re-request input lower upper)
+            (invalid-input-re-request sanitized lower upper)
             (recur)))))))
 
 ;; TODO: instead of matching on valid letters, you could match on valid keys
@@ -133,14 +134,15 @@
   [{:keys [input-question valid-answers invalid-input-response]}]
   (loop []
     (let [_     (println input-question)
-          input (read-line)]
-      (if (contains? valid-answers input)
+          input (read-line)
+          sanitized (s/trim input)]
+      (if (contains? valid-answers sanitized)
         (u/print-and-return
-         {:input-string (str "Nice! You answered '" input "'!")
+         {:input-string (str "Nice! You answered '" sanitized "'!")
           :is-debug? true
-          :return-item input})
+          :return-item sanitized})
         (do
-          (println (str "You entered '" input "'."))
+          (println (str "You entered '" sanitized "'."))
           (println invalid-input-response)
           (recur))))))
 
@@ -217,14 +219,15 @@
   (loop []
     ;; TODO: refactor out not-nil? to be some? instead
     (when (some? prompt) (println prompt))
-    (let [input (read-line)]
-      (if (and (some? input) (seq input))
-        (u/print-and-return {:input-string (str "You entered '" input "'.")
+    (let [input (read-line)
+          sanitized (s/trim input)]
+      (if (and (some? sanitized) (seq sanitized))
+        (u/print-and-return {:input-string (str "You entered '" sanitized "'.")
                              :is-debug? false
-                             :return-item input})
+                             :return-item sanitized})
         (do
            ;; TODO: Replace the following with a string generator function
-          (println (str "Input '" input
+          (println (str "Input '" sanitized
                         "' is not valid."))
           (recur))))))
 
