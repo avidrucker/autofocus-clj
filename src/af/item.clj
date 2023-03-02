@@ -119,7 +119,7 @@
    :status (if input-status input-status :new)})
 
 
-(defn is-duplicate?
+(defn- is-duplicate?
   "if `dup-number` key is found on an item, it is a duplicate item"
   [{:keys [input-item]}]
   (some? (get input-item :dup-number)))
