@@ -675,24 +675,18 @@ to understand/read? A: Yes, it did.
       (get next-new-item-after-cursor :t-index)
       )))
 
-;; testing the determinationm of the next-cursor
-(calc-next-cursor round-test-1)
-(calc-next-cursor round-test-2)
+;; TODO: convert these to tests & relocate to the test namespace
+;; testing the determination of the next-cursor
+;; (calc-next-cursor round-test-1)
+;; (calc-next-cursor round-test-2)
 
-;; TODO: split this function into 2: get-single-comparison, and submit-single-comparison where the first function gets a single comparison to serve to the user, whereas submit-single-comparison will 'modify' the app state with a user's choice, or end the review session and take the user back to the main menu 
-;; original name: `submit-individual-review`
 (defn get-single-comparison
-  "For a given input-list and a cursor index, a prompt-question is generated."
+  "For a given input-list and a cursor index, a prompt-question is generated.
+  The prompt question will be something like 'Do you want to do B more than A?'"
   [{:keys [input-list input-cursor-index]}]
-  (let [;; current-item (get input-list input-cursor-index)
-        ;; TODO: investigate whether or not two separate indecies are necessary/helpful (ie. `input-cursor-index` and `current-item-index`)
-        ;; current-item-index (get current-item :t-idex)
-        current-question (list-and-cursor-to-question
-                          {:input-list input-list
-                           :cursor-input input-cursor-index})]
-   ;; DONE: generate the appropriate question to return back to the user
-    current-question ;; "Do you want to...? [stub question]" 
-    ))
+  (list-and-cursor-to-question
+   {:input-list input-list
+    :cursor-input input-cursor-index}))
 
 
 ;; TODO: refactor so that submit-single-comparison does 

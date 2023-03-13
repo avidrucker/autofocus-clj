@@ -8,14 +8,11 @@
    ))
 
 
-;; DONE: replace literal string hyphen/dash fences with def binding
-;; TODO: relocate string constants to af.data namespace
+;; Question: Would it be more effective for me to relocate all
+;;           the string constants to the af.data namespace?
 ;; TODO: evaluate whether calc and utils should be merged or kept separate
-;; TODO: review entire code base for (not (nil?)) to refactor/replace with (some?)
-;; TODO: review namespace for privatization
-;; DONE: mark whitespace only text inputs for items as invalid text entry, 
-;;       and force the user to input non-whitespace text (i.e. sanitize inputs by 
-;;       trimming them)
+;; Question: What is more effective, to create one map of `cli-texts`, or to
+;;           use multiple explicitly named global vars
 
 
 (def DEBUG-MODE-ON 
@@ -23,20 +20,23 @@
   false)
 
 
-;; TODO: implement 0.5 second 'print and clear' for confirm messages to show, and
+;; IDEA: TODO: implement 0.5 second 'print and clear' for confirm messages to show, and
 ;;       then 'return' back to the main view (list and menu)
 ;; STRING CONSTANTS
-;; TODO: relocate this & other cli copy text to top of cli namespace
 (def cli-texts
   {:adding {:prompt "Please enter the text for your to-do item (or type 'q' to quit):"
             :cancel-confirm "... cancelling adding new item to list..."
             :success-confirm "...adding item to list..."}})
 
+(def QUIT-CONFIRM-MSG "Confirming 'quit' action...")
+    
+(def DO-APP-ACTION-ERROR-MSG "Invalid action detected, error code 002.")
+
 (def RETURN-TO-MAIN-MENU-STRING 
   "Please press the ENTER key to return to the main menu.")
 
 (def INVALID-YNQ-INPUT-RESPONSE
-  "That wasn't a 'y', 'n' or 'q' answer. Please try again.")
+  "That wasn't a 'y', 'n', or 'q' answer. Please try again.")
 
 #_(def INVALID-YN-INPUT-RESPONSE
   "That wasn't a 'y' or 'n' answer. Please try again.")
@@ -46,6 +46,11 @@
 (defn- gen-choice-confirm-string [input newline fence]
   (str "You selected choice #" input "." newline fence))
 
+;; TODO: refactor this function into a string generation function,
+;;       do not pass it as an argument, and remove usage by
+;;       cli-get-number-range-inclusive, instead passing the string
+;;       instead to be printed out, or printing out the message
+;;       external to the function
 ;; TODO: write down why this is not a good idea: 'pass this to 
 ;;       `cli-get-number-in-range-inclusive`'
 ;; TODO: refactor cli functions to not directly call data items 
@@ -56,24 +61,32 @@
 (defn- cli-choice-confirm [input]
   (println (gen-choice-confirm-string input d/NEWLINE d/CLI-FENCE)))
 
-#_(defn- cli-input-confirm [input]
-    (println (str "You inputted '" input "'. Thank you for the valid input!")))
-
 (defn- gen-invalid-input-detected-msg [input]
     (str "Invalid input '" input "' entered."))
 
-;; TODO: refactor this function to take key-val map of {:invalid-input :invalid-confirm :re-prompt} where,
-;;       instead of passing x and y, the prompt is generated externally and passed in
-(defn- invalid-input-msg-and-prompt [input lower upper]
-  (println (str (gen-invalid-input-detected-msg input) d/NEWLINE
-                "Please enter a digit between " lower " and " upper ","
-                d/NEWLINE "and then press the ENTER key:")))
+(defn- gen-enter-number-in-range [lower upper]
+  (str "Please etner a digit between " lower " and " upper ","
+       d/NEWLINE "and then press the ENTER key:"))
+
+;; TODO: refactor this function to take key-val map of
+;; {:invalid-input :invalid-confirm :re-prompt} where,
+;; instead of passing lower and upper, the prompt is
+;; generated externally and passed in
+;; TODO: split the message generation of 'invalid-input-detected'
+;;       from the generation of 'prompt-user-for-valid-input'
+;;       (i.e. split this function into two)  
+(defn- cli-print-invalid-range-input-message [input lower upper]
+  (println (str (gen-invalid-input-detected-msg input)
+                d/NEWLINE
+                (gen-enter-number-in-range lower upper))))
 
 
 ;; TODO: rename invalid-input-re-request arg key so that it is clear from its name that it is a function 
 ;; TODO: refactor this function so that its contents know nothing about menus, choices, nor does it decide its own printout messages, instead, it takes in print out messages as functions and passes to them the appropriate arguments, for example `if-cli-choice-confirm-exists-then-print-with-input-arg`, and so on for `cli-input-confirm`, `cli-invalid-input-detected, etc.`
 (defn- cli-get-number-in-range-inclusive
-  "Gets a number ranging from x to y (inclusive) from the user via keyboard input and stdin. Optionally takes a map from which to direct the printing out of prompts and confirmations."
+  "Gets a number ranging from x to y (inclusive) from the user via
+  keyboard input and stdin. Optionally takes a map from which to
+  direct the printing out of prompts and confirmations."
   [{:keys [lower upper choice-confirm-func invalid-input-re-request]}]
   ;; TODO: implement optional prompt for this function
   ;; (println (str "Please enter a number from " x " to " y ": "))
@@ -171,11 +184,15 @@
                             {:input-list current-list
                              :input-cursor-index current-index})
 
+          full-prompt
+          (str current-question
+               " Type Y for yes, N for no, or Q to quit reviewing the list.")
+          
           ;; get the user's answer to the comparison question
           current-answer
           (convert-answer-letter-to-keyword
            (cli-ask-question-with-limited-answer-set
-            {:input-question current-question
+            {:input-question full-prompt
              :valid-answers valid-ynq-answer-choices
              :invalid-input-response INVALID-YNQ-INPUT-RESPONSE}))
 
@@ -269,15 +286,9 @@
                   :separator d/NEWLINE}))))
 
 
-;; TODO: refactor/convert this function into string generation 
-;; to leave printing responsibilities to the caller/parent function
-;; Suggested new name `gen-selection-prompt-with-number-input`
-(defn- cli-ask-for-menu-input
+(defn- gen-select-with-number-input-prompt
   [options-cnt]
-  ;; TODO: replace the following with string generator sandwich function
-  (println (str
-            "Select by number from the above menu [1-"
-            options-cnt "]: ")))
+  (str "Select by number from the above menu [1-" options-cnt "]: "))
 
 
 ;; TODO: convert into pure func by taking in args, not global state
@@ -288,19 +299,21 @@
            input-menu-strings-map]}]
   (let [menu-length (count input-menu)]
     (cli-display-menu input-menu input-menu-strings-map)
-    (cli-ask-for-menu-input menu-length)
+    ;; TODO: take the following input on the same line as the prompt
+    ;; (i.e. use print instead of println, and flush before/after
+    ;; taking the user's input) 
+    (println (gen-select-with-number-input-prompt menu-length))
     (let [menu-choice-number
-         ;; TODO: refactor cli-get-number-in-range-inclusive call 
-         ;;     signature to have clearer inputs ('lower' & 
-         ;;     'upper' instead of 'x' & 'y')
           (cli-get-number-in-range-inclusive
            {:lower 1
             :upper menu-length
             :choice-confirm-func cli-choice-confirm
-            :invalid-input-re-request invalid-input-msg-and-prompt})]
+            :invalid-input-re-request cli-print-invalid-range-input-message})]
       (get input-menu (dec menu-choice-number)))))
 
 
+;; TODO: rename cancel-confirm and success-confirm to cancel-msg and success-msg
+;; TODO: rename prompt to be more specific & descriptive
 ;;;; refactoring candidate
 (defn- cli-conduct-add-action
   [{:keys [input-list prompt cancel-confirm success-confirm]}]
@@ -413,56 +426,53 @@
           :return-item result})))))
 
 
+;; TODO: refactor this function to polymorphically call the functions as appropriate for CLI, keeping in mind that a GUI version will also exist, which will not take the same inputs
 (defn cli-do-app-action
   [input-action input-list]
   (condp = input-action
+    ;; Question: Is it more effective to pass in prompts & CLI printout messages as arguments to the application's main list functions? Why or why not? Note, these messages are likely to be different for the CLI and GUI applications.
     d/ADD         (cli-conduct-add-action
                    {:input-list input-list
                     :prompt (get-in cli-texts [:adding :prompt])
                     :cancel-confirm (get-in cli-texts [:adding :cancel-confirm])
                     :success-confirm (get-in cli-texts [:adding :success-confirm])})
 
-    ;;;; TODO: refactor cli-conduct-prioritization-review to use
-    ;;;; get-index-of-first-new-item-after-priority-item internally,
-    ;;;; rather than externally
     d/PRIORITIZE  (cli-conduct-prioritization-review
                    {:input-list input-list
                     :input-cursor-index
                     (l/get-index-of-first-new-item-after-priority-item
                      {:input-list input-list})})
 
-    ;; TODO: implement the yes/no question asking after a user is done 
-    ;; focusing/actioning of 'Is there work remaining on this task/item?'
-    ;; TODO: implement the 'press any key' or 'press the ENTER key' to continue
+    ;; TODO: implement the 'press any key' rather than just ENTER to continue
     d/DO          (cli-conduct-focus-action {:input-list input-list})
 
-    ;;;; overview-and-summary, detailed-steps, real-world-example
     d/ABOUT       (print-text-section-and-return-to-menu 
                    {:input-list input-list
                     :section-text (get d/about-texts :overview-and-summary)})
 
-    d/EXAMPLE     (print-text-section-and-return-to-menu
-                   {:input-list input-list
-                    :section-text (get d/about-texts :real-world-example)}) 
+    ;; currently the 'example' and 'how-to' sections are disabled
+    ;; d/EXAMPLE     (print-text-section-and-return-to-menu
+    ;;                {:input-list input-list
+    ;;                 :section-text (get d/about-texts :real-world-example)}) 
 
-    d/HOW-TO      (print-text-section-and-return-to-menu
-                   {:input-list input-list
-                    :section-text (get d/about-texts :detailed-steps)})
+    ;; d/HOW-TO      (print-text-section-and-return-to-menu
+    ;;                {:input-list input-list
+    ;;                 :section-text (get d/about-texts :detailed-steps)})
 
-    ;; TODO: relocate quit confirmation string to af.data under `application-text` binding/name
     ;; TODO: implement serialization logic so that, upon quitting, 
     ;;       the user has their list autosaved to disk
-    d/QUIT (when DEBUG-MODE-ON (println "Confirming 'quit' action..."))
-
+    d/QUIT (when DEBUG-MODE-ON (println QUIT-CONFIRM-MSG))
+    
     ;; default/else condition/case
-    (println "Invalid action detected, error code 002.")))
+    (println DO-APP-ACTION-ERROR-MSG)))
 
 
 ;; TODO: relocate this function to calc namespace, as its functionality is general
 (defn- gen-item-count-string [input-list]
-  (if (= 1 (count input-list))
-    (str d/NEWLINE "There is 1 item in your list.")
-    (str d/NEWLINE "There are " (count input-list) " items in your list.")))
+  (str d/NEWLINE
+       (if (= 1 (count input-list))
+         "There is 1 item in your list."
+         (str "There are " (count input-list) " items in your list."))))
 
 
 (defn- gen-list-render-output
