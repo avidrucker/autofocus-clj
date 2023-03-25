@@ -20,18 +20,20 @@
       "A list with 3 items should return back a t-next value of 3."))
 
 ;; note: only public functions are testable
-;; ^{:description "Unit testing is-auto-markable-list? ..."}
-;; (deftest ^:unit is-auto-markable-list?-test
-;;   (is false
-;;       (sut/is-auto-markable-list?
-;;        {:input-list
-;;         [{:t-index 0, :text "b", :status :ready}
-;;          {:t-index 1, :text "c", :status :new}
-;;          {:t-index 2, :text "d", :status :new}]})
-;;       "A list with a ready item is not auto-markable."))
+;;^{:description "Unit testing is-auto-markable-list? ..."}
+#_(deftest ^:unit is-auto-markable-list?-test
+  (is false
+      (sut/is-auto-markable-list?
+       {:input-list
+        [{:t-index 0, :text "b", :status :ready}
+         {:t-index 1, :text "c", :status :new}
+         {:t-index 2, :text "d", :status :new}]})
+      "A list with a ready item is not auto-markable."))
 
-^{:description "Unit testing add-item-to-list function ..."}
-(deftest ^:unit add-item-to-list-test
+
+;; note: only public functions are testable
+;;^{:description "Unit testing add-item-to-list function ..."}
+#_(deftest ^:unit add-item-to-list-test
   (let [step1 (sut/add-item-to-list
                {:input-item (get test-items 0)
                 :target-list []})
@@ -46,11 +48,34 @@
             {:t-index 1 :text "banana" :status :new}]
            step2))))
 
-^{:description "Unit testing conduct-focus-on-list function ..."}
-(deftest ^:unit conduct-focus-on-list-test
+;;^{:description "Integration testing conduct-focus-on-list function ..."}
+#_(deftest ^:unit conduct-focus-on-list-test
   (let [step1 (sut/add-item-to-list
                {:input-item (get test-items 0)
                 :target-list []})
         step2 (sut/mark-priority-item-done {:input-list step1})]
     (is (= [{:t-index 0 :text "apple" :status :done}] step2))))
+
+^{:description "Unit testing conduct-focus-on-list function ..."}
+(deftest ^:unit conduct-focus-on-list-test
+  (is (= [{:t-index 0 :text "apple" :status :done}]
+         (sut/mark-priority-item-done
+          {:input-list [{:t-index 0 :text "apple" :status :ready}]}))
+      "correctly marks the priority item as done for a list with ONLY ONE item.")
+  (is (= [{:t-index 0 :text "apple" :status :ready}
+          {:t-index 1 :text "banana" :status :done}]
+         (sut/mark-priority-item-done
+          {:input-list [{:t-index 0 :text "apple" :status :ready}
+                        {:t-index 1 :text "banana" :status :ready}]}))
+      "correctly marks the priority item as done for a list with MORE THAN ONE item."))
+
+
+^{:description "Unit testing conduct-focus-on-list function ..."}
+(deftest ^:unit get-single-comparison-test
+  (is (=
+       (sut/get-single-comparison
+        {:input-list [{:t-index 0 :text "apple" :status :ready}
+                      {:t-index 1 :text "banana" :status :new}]})
+       "Do you want to 'banana' more than 'apple'?"
+       )))
 
