@@ -54,4 +54,29 @@
   evaluated... Or, you could also statically render 2-3 widgets as
   well 😉
   
-  
+ ideas that have been tossed / rejected
+ 
+- implement 0.5 second 'print and clear' for confirm messages to show, and then 'return' back to the main view (list and menu) Note: This is not a great idea because it will be possible to not catch or read the message before it dissapears
+
+
+Ideas for clear layers of abstraction/hierarchy
+"A pure dispatch function which dispatches based on an action keyword
+to update a user's to-do list as a result of a new item addition,
+list reviewing/prioritizing, or list focusing (ie. taking action on/doing
+an item task).
+
+Note: A separate helper dispatch function can handle things such as
+ automarking, duplicating, or other post-action actions... 
+
+DONE: Assess Q: Did the old `update-list` function make the code harder
+to understand/read? A: Yes, it did.
+
+- append new item to bottom of list[1]
+- auto-mark/auto-dot first markable/dottable item as 'ready' (so there is always 
+  at least one dotted/marked item OR no markable/dottable items)
+- mark/dot item as 'ready' at index n (when reviewing one's list for the purpose 
+  of comparing / prioritizing)
+- re-mark bottom-most dotted item as 'done' after 'focus' session
+
+[1] update-list takes a new item, to leave the item creation itself to a dedicated 
+   item creation function, which in turn leaves text input to an impure IO function"

@@ -13,31 +13,23 @@
 
 (def list-api-design
   ;; TODO: convert these items to user stories
-  "Q: What are the things that can be done with an AutoFocus list
-  at the 'list level' *user* API?
-  - 'add': append new item to bottom of list
-  - 'prioritize': compare two items, potentially resulting in one getting marked as 'ready'
-  - 'do': take action on the 'priority item', which will result in it getting marked as 'done', and potentially also a duplicate task item being generated for further/remaining work (if there is any) on said item task
+  "Q: What are the things that can be done with an AutoFocus list at the
+      'list level' *user* API?
+   - 'add': append new item to bottom of list
+   - 'prioritize': compare two items, potentially resulting in one getting
+      marked as 'ready'
+   - 'do': take action on the 'priority item', which will result in it
+      getting marked as 'done', and potentially also a duplicate task
+      item being generated for further/remaining work (if there is any)
+      on said item task
 
 Q: What are the things that are handled by the list namespace, but not directly by the user?
-  - auto-mark/auto-dot first markable/dottable item (so there is
-    always at least one dotted/marked item OR no markable/dottable items)
-  - mark/dot item at index n (when reviewing one's list for the
+  - auto-mark first auto-markable item (so there is
+    always at least one `:ready` item OR no `:new` items)
+  - set item at index n to status X (when reviewing one's list for the
     purpose of comparing / prioritizing)
-  - mark bottom-most dotted item as `:done` after 'focus' session")
-
-
-;; DONE: Implement auto-dotting logic for first-dottable-item
-;; DONE: write a function that creates to-do list items as-is (without a t-index)
-;; DONE: write a function that takes a created to-do list item without a t-index, 
-;; adds a t-index key-value pair to it, and stick its onto the bottom of a to-do list
-;; DONE: extract from the af.list namespace a separate af.item namespace as you see fit
-
-;;;; TODO: implement the following function stubs
-;; automark-list
-;; is-automarkable-list?
-;; mark-first-new-item-in-list
-;; index-of-first-new-item-in-list
+  - mark bottom-most `:ready` item (the 'priority item') as `:done`
+    after the 'focus'/'do' session")
 
 
 ;; ⌚
@@ -51,38 +43,6 @@ Q: What are the things that are handled by the list namespace, but not directly 
 ;; TODO: Write a test that confirms that after creating new items that the list t-index 
 ;; values return back true from (distinct?) See: ClojureDocs: distinct?
 
-
-;; Ideas for clear layers of abstraction/hierarchy
-#_"A pure dispatch function which dispatches based on an action keyword
-to update a user's to-do list as a result of a new item addition,
-list reviewing/prioritizing, or list focusing (ie. taking action on/doing
-an item task).
-
-Note: A separate helper dispatch function can handle things such as
- automarking, duplicating, or other post-action actions... 
-
-DONE: Assess Q: Did the old `update-list` function make the code harder
-to understand/read? A: Yes, it did.
-
-- append new item to bottom of list[1]
-- auto-mark/auto-dot first markable/dottable item as 'ready' (so there is always 
-  at least one dotted/marked item OR no markable/dottable items)
-- mark/dot item as 'ready' at index n (when reviewing one's list for the purpose 
-  of comparing / prioritizing)
-- re-mark bottom-most dotted item as 'done' after 'focus' session
-
-[1] update-list takes a new item, to leave the item creation itself to a dedicated 
-   item creation function, which in turn leaves text input to an impure IO function"
-
-
-;; DONE: Implement the auto-marking/auto-dotting of the first added item immediately 
-;; after adding it
-;; DONE: Test that auto-marking works on the first item added to an empty list
-;; TODO: Test that auto-marking works on a new item added to a list that has only 0 
-;; items in it of status 'done'  (in other words:  "Implement auto-marking that 
-;; occurs after adding a new item to the list (such as the first item to the list, 
-;; or the next item added after all the previous items were marked complete, or on 
-;; a new page)")
 
 ;; PURE FUNC
 ;; DONE: refactor to use `pos` instead of `> 0`
@@ -218,7 +178,7 @@ to understand/read? A: Yes, it did.
 
         new-list
         (assoc input-list n-index new-item)]
-    ;; TODO: remove in-bounds check from here, this should be a separate 
+    ;; DONE: remove in-bounds check from here, this should be a separate 
     ;;       check elsewhere  (ie. move to the domain context boundary) 
     ;; (if (in-bounds-inclusive? {:valid-floor 1
     ;; :valid-max (dec (count input-list))
@@ -284,17 +244,12 @@ to understand/read? A: Yes, it did.
   Work-In-Progress language: 'transacts' (on?) the to-do items collection 
    'database' (i.e. the to-do list)"
   [{:keys [input-item target-list]}]
-  (let [;; TODO: convert plain println debugging to
-        ;;       custom debugger (when DEBUG-MODE-ON ...)
-        ;; _  (println "...adding item to list...") ;; debugging
-
-        ;; TODO: double-check that setting this here is appropriate and 
-        ;;       effective for both new items, duplicate items, as well 
-        ;;       as any other adding items to list scenarios that 
-        ;;       utilize this function
-        ;; note: adding new items does not require a target index bc 
+  (let [;; note: adding new items does not require a target index bc 
         ;; new items are always appended to the end/bottom/back of the list
-        item-to-be-added (conj {:t-index (t-next {:target-list target-list})} input-item) 
+
+        ;; add t-index to soon to be added input-item
+        item-to-be-added
+        (conj {:t-index (t-next {:target-list target-list})} input-item) 
 
         new-list (conj target-list item-to-be-added)
 

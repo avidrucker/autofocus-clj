@@ -19,9 +19,6 @@
   "debug mode which toggles on/off println debugging"
   false)
 
-
-;; IDEA: TODO: implement 0.5 second 'print and clear' for confirm messages to show, and
-;;       then 'return' back to the main view (list and menu)
 ;; STRING CONSTANTS
 (def cli-texts
   {:adding {:prompt "Please enter the text for your to-do item (or type 'q' to quit):"
@@ -176,9 +173,10 @@
     - the next cursor (which may be `nil` if there are no more suitable `:new` items left prioritize)
     - the user's intent to continue (`true` for `:yes` and `:no` answers, `false` if the user's answer was `:quit`) ;; `intent-to-continue`"
   [{:keys [input-list input-cursor-index]}]
-  (when DEBUG-MODE-ON (println d/REVIEW-START)) ;; println debugging 
+  ;; (when DEBUG-MODE-ON (println d/REVIEW-START)) ;; println debugging 
   (loop [current-list input-list
-         current-index input-cursor-index]
+         current-index input-cursor-index ;; TODO: replace call to l/get-first-index... in cli ns with call to same function here instead, and remove calls to it, as it appears to be extraneous
+         ]
     (let [;; generate the question to ask the user
           current-question (l/get-single-comparison
                             {:input-list current-list
@@ -319,22 +317,15 @@
   [{:keys [input-list prompt cancel-confirm success-confirm]}]
   (let [input-text (cli-quittable-get-text-from-user
                     {:prompt prompt})]
-    ;; TODO: determine whether `cli-conduct-add-action` should handle empty
-    ;; inputs, as `cli-quittable-get-text-from-user` seems to already be
-    ;; handling the IO and decision layer (and more specifically, preventing
-    ;; invalid input, and listening for the command to 'abort' on adding),
-    ;; whereas I'd like the add function to simply add
-    (if (nil? input-text)
-      ;; TODO: if there is no input text, the 'invalid input' message should
-      ;; be displayed, and the add action should not be cancelled, but this
-      ;; code seems to imply that it would be. fix code writing to clearly
-      ;; express `cli-conduct-add-action` function's intent and functionality
-      ;; return the list as-is
+    (if (nil? input-text) ;;;; TODO: reverse logic & use `some?` instead of `nil?`
+      
+      ;;;; when user indicates they are CANCELLING add action, return list as-is
       (u/print-and-return
-       {:input-string cancel-confirm 
+       {:input-string cancel-confirm ;; TODO: confrim that this is being used 
         :is-debug? false
         :return-item input-list})
-      ;; return list w/ new item appended
+
+      ;; else, return list w/ new item appended
       (u/print-and-return
        {:input-string success-confirm
         :is-debug? true
@@ -437,6 +428,8 @@
                     :cancel-confirm (get-in cli-texts [:adding :cancel-confirm])
                     :success-confirm (get-in cli-texts [:adding :success-confirm])})
 
+    ;; TODO: Answer Q: What are the benefits of exposing list ns internals here?
+    ;; TODO: If answer to above is none, remove reference to l/get-index-of-first...
     d/PRIORITIZE  (cli-conduct-prioritization-review
                    {:input-list input-list
                     :input-cursor-index

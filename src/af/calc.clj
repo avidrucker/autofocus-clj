@@ -47,13 +47,10 @@
   which menu options should be added to the menu-options list."
   [{:keys [all-menu-options prioritizable? actionable?]}]
   (when DEBUG-MODE-ON (println "getting valid menu option..."))
-  (let [result (vec (cs/difference ;; Q: clojure.data/diff wouldn't work for some reason, but why?
+  (let [result (vec (cs/difference
         (set all-menu-options)
         (set (invalid-menu-options {:prioritizable? prioritizable?
                                     :actionable? actionable?}))))]
-    ;; (when DEBUG-MODE-ON (println ["options result: " result
-    ;;           "\nall menu options: " all-menu-options
-    ;;           "\ninput list: " input-list]))
     result))
 
 
