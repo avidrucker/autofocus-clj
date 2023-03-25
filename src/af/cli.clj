@@ -35,13 +35,13 @@
 (def INVALID-YNQ-INPUT-RESPONSE
   "That wasn't a 'y', 'n', or 'q' answer. Please try again.")
 
-#_(def INVALID-YN-INPUT-RESPONSE
-  "That wasn't a 'y' or 'n' answer. Please try again.")
+#_(def Y-OR-N-ANSWER "'y' or 'n'")
 
+#_(def YNORQ-ANSWER "'y', 'n', or 'q'")
 
 ;; STRING GENERATION
-(defn- gen-choice-confirm-string [input newline fence]
-  (str "You selected choice #" input "." newline fence))
+(defn- gen-choice-confirm-string [input]
+  (str "You selected choice #" input "."))
 
 ;; TODO: refactor this function into a string generation function,
 ;;       do not pass it as an argument, and remove usage by
@@ -56,14 +56,14 @@
 ;;       functions under a shared parent function, for example 
 ;;       `cli-choice-confirm`
 (defn- cli-choice-confirm [input]
-  (println (gen-choice-confirm-string input d/NEWLINE d/CLI-FENCE)))
+  (println (str (gen-choice-confirm-string input) d/NEWLINE d/CLI-FENCE)))
 
-(defn- gen-invalid-input-detected-msg [input]
-    (str "Invalid input '" input "' entered."))
+(defn- gen-invalid-input-detected-msg [entered-input]
+  (str "Invalid input '" entered-input "' entered."))
 
 (defn- gen-enter-number-in-range [lower upper]
-  (str "Please etner a digit between " lower " and " upper ","
-       d/NEWLINE "and then press the ENTER key:"))
+  (str "Please enter a digit between " lower " and " upper ","
+       d/NEWLINE "and then press the ENTER key: "))
 
 ;; TODO: refactor this function to take key-val map of
 ;; {:invalid-input :invalid-confirm :re-prompt} where,
@@ -72,10 +72,10 @@
 ;; TODO: split the message generation of 'invalid-input-detected'
 ;;       from the generation of 'prompt-user-for-valid-input'
 ;;       (i.e. split this function into two)  
-(defn- cli-print-invalid-range-input-message [input lower upper]
-  (println (str (gen-invalid-input-detected-msg input)
-                d/NEWLINE
-                (gen-enter-number-in-range lower upper))))
+(defn- cli-print-invalid-range-input-message [entered-input lower upper]
+  (print (str (gen-invalid-input-detected-msg entered-input)
+              d/NEWLINE
+              (gen-enter-number-in-range lower upper))))
 
 
 ;; TODO: rename invalid-input-re-request arg key so that it is clear from its name that it is a function 
@@ -84,17 +84,18 @@
   "Gets a number ranging from x to y (inclusive) from the user via
   keyboard input and stdin. Optionally takes a map from which to
   direct the printing out of prompts and confirmations."
-  [{:keys [lower upper choice-confirm-func invalid-input-re-request]}]
+  [{:keys [lower upper]}]
   ;; TODO: implement optional prompt for this function
   ;; (println (str "Please enter a number from " x " to " y ": "))
   ;; TIL: How to convert a non-literal string into a regular expression, via re-pattern
   (let [match-str (re-pattern (str "^[" lower "-" upper "]$"))]
     (loop []
-      (let [input (read-line)
+      (let [input (do (flush)
+                      (read-line))
             sanitized (s/trim input)]
         (if (and (some? sanitized) (re-matches match-str sanitized))
           (do
-            (choice-confirm-func sanitized)
+            (cli-choice-confirm sanitized)
             ;; TODO: refactor so that way this can run as a ClojureScript web app
             (Integer/parseInt sanitized))
           (do
@@ -102,7 +103,7 @@
             ;; TODO: refactor to remove imported function which causes a loss of 
             ;;       intospection into the function contract
             ;;       Q: Is this an example relating to referential transparency?
-            (invalid-input-re-request sanitized lower upper)
+            (cli-print-invalid-range-input-message sanitized lower upper)
             (recur)))))))
 
 ;; TODO: instead of matching on valid letters, you could match on valid keys
@@ -239,8 +240,8 @@
   Note: Prompt is optional."
   [{:keys [prompt]}]
   (loop []
-    (when (some? prompt) (println prompt))
-    (let [input (read-line)
+    (when (some? prompt) (print (str prompt " ")))
+    (let [input (do (flush) (read-line))
           sanitized (s/trim input)]
       (if (and (some? sanitized) (seq sanitized))
         (u/print-and-return
@@ -297,16 +298,15 @@
            input-menu-strings-map]}]
   (let [menu-length (count input-menu)]
     (cli-display-menu input-menu input-menu-strings-map)
-    ;; TODO: take the following input on the same line as the prompt
+    ;;;; TODO: take the following input on the same line as the prompt
     ;; (i.e. use print instead of println, and flush before/after
     ;; taking the user's input) 
-    (println (gen-select-with-number-input-prompt menu-length))
+    (print (gen-select-with-number-input-prompt menu-length))
     (let [menu-choice-number
           (cli-get-number-in-range-inclusive
            {:lower 1
             :upper menu-length
-            :choice-confirm-func cli-choice-confirm
-            :invalid-input-re-request cli-print-invalid-range-input-message})]
+            })]
       (get input-menu (dec menu-choice-number)))))
 
 
