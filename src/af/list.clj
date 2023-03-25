@@ -253,7 +253,6 @@ Q: What are the things that are handled by the list namespace, but not directly 
 
         new-list (conj target-list item-to-be-added)
 
-        ;; note: it would be incorrect to call set-topmost-new-item here bc new items aren't guarenteed to be automarkable
         auto-marked-new-list
         (conditionally-automark-list {:input-list new-list})]
     (vec auto-marked-new-list)))
