@@ -227,13 +227,8 @@ Q: What are the things that are handled by the list namespace, but not directly 
     input-list))
 
 
-;; TODO: refactor list logic so that way the update-list function is called in 
-;; the next namespace, rather than here, similar to `conduct-focus-on-list`
 ;; ➕
-(defn add-item-to-list
-  ;; TODO: refactor via separation principle  (ie. as possible, make one 
-  ;; function that makes items, and make one function that adds items to 
-  ;; a list, and compose them in that way) 
+(defn- add-item-to-list
   "This function takes in an input item and target list, and then 'adds' said 
    item to the list by making a brand new list with the input item appended on 
    to the end.
@@ -458,7 +453,7 @@ Q: What are the things that are handled by the list namespace, but not directly 
     (and has-priority-item? has-new-item-after-priority-item?)))
 
 
-(defn list-and-cursor-to-question 
+(defn- list-and-cursor-to-question 
   [{:keys [input-list cursor-input]}]
   (let [priority-item (get-priority-item-from-list {:input-list input-list})
         cursor-item (get input-list cursor-input)
