@@ -383,26 +383,11 @@ Q: What are the things that are handled by the list namespace, but not directly 
                                   :input-status :new}))
         
         result (when (some? next-new-item-after-index)
-                 (get next-new-item-after-index :t-index))
-        
-        _      (when DEBUG-MODE-ON (println
-                            "**********"
-                                    "\n!!! next-new-item-after-index:"
-                                    "\nindex #: " input-index
-                                    "\nitem: " next-new-item-after-index
-                                    "\nresult: " result
-                                    "\n**********")) 
-        ]
-    
-    ;; `first-new-item-index-after`: if another :status :new item exists
-    ;; in list, we save its :t-index. otherwise, return nil for next-cursor
-    ;; TODO: consider moving first to inside of code block to replace
-    ;; `when-not-nil?` idiom with `when-not-empty?`
+                 (get next-new-item-after-index :t-index))]
     result))
 
 
 ;; TODO: attempt to make this function private by refactoring out usage from cli.clj line 372
-;; DONE: resolve bug where prioritizable lists are not correctly recognized as such
 (defn get-index-of-first-new-item-after-priority-item
   "Returns the index of the next encountered item of `:new` status
   following priority-item. If no priority item exists, or no `:new`
@@ -433,7 +418,7 @@ Q: What are the things that are handled by the list namespace, but not directly 
   (let [has-priority-item? (some? (get-priority-item-from-list
                                    {:input-list input-list}))
 
-        ;; TODO: investigate, is the `when` form wrapper here necessary?
+        ;;;; TODO: investigate, is the `when` form wrapper here necessary?
         index-result (when has-priority-item?
                        (get-index-of-first-new-item-after-priority-item
                         {:input-list input-list}))
@@ -449,7 +434,7 @@ Q: What are the things that are handled by the list namespace, but not directly 
                              "\n!* index-result: " index-result
                              "\n!* has-new-item-after-priority-item?: " has-new-item-after-priority-item?
                              "\n=========="]))]
-    ;; Q: What are the differences between `(every-pred true?)` and `and`
+    ;; Q: What are the differences between `(every-pred true?)` and `and`?
     (and has-priority-item? has-new-item-after-priority-item?)))
 
 
@@ -504,7 +489,8 @@ Q: What are the things that are handled by the list namespace, but not directly 
   #_(= (is-prioritizable-list? {:input-list review-test-list-2}) false)
 ;; )
 
-(get-index-of-first-new-item-after-priority-item {:input-list review-test-list-1})
+;; TODO: convert this to a test
+#_(get-index-of-first-new-item-after-priority-item {:input-list review-test-list-1})
 
 ;; REVIEW DESIGN
 ;; A review is simply one comparison of two items in a to-do list
