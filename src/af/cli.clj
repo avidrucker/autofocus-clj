@@ -333,7 +333,7 @@
     result))
 
 
-(defn print-text-section-and-return-to-menu
+(defn- print-text-section-and-return-to-menu
   [{:keys [input-list section-text]}] 
     (cli-clear-buffer)
     (print-wait-on-enter-key-then-return
@@ -345,7 +345,7 @@
 
 ;; TODO: take any key inluding ENTER to end 'focus' mode, and take that input on the same line as the prompt, without creating a new line
 ;; TODO: add a `CLI-FENCE` to just below the 'end-focus-mode' prompt to separate it from the question to the user on whether there is work remaining to be done
-(defn cli-conduct-take-action
+(defn- cli-conduct-take-action
   [{:keys [input-list]}]
   (let [;; get the results of taking action on an item
         take-action-results (l/conduct-take-action-on-list
@@ -389,7 +389,7 @@
 
 
 ;; TODO: refactor this function to polymorphically call the functions as appropriate for CLI, keeping in mind that a GUI version will also exist, which will not take the same inputs
-(defn cli-do-app-action
+(defn- cli-do-app-action
   [input-action input-list]
   (condp = input-action
     ;; Question: Is it more effective to pass in prompts & CLI printout messages as arguments to the application's main list functions? Why or why not? Note, these messages are likely to be different for the CLI and GUI applications.
