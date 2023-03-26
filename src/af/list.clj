@@ -624,6 +624,22 @@ Q: What are the things that are handled by the list namespace, but not directly 
     :cursor-input input-cursor-index}))
 
 
+(defn- current-item-text [{:keys [input-list input-cursor-index]}]
+  (get-in input-list [input-cursor-index :text]))
+
+;;;; DONE: test out `gen-current-item-text` function
+#_(current-item-text {:input-list [{:t-index 0, :text "b", :status :ready}
+                                     {:t-index 1, :text "c", :status :new}
+                                     {:t-index 2, :text "d", :status :new}]
+                        :input-cursor-index 1})
+
+(defn- gen-marking-current-text
+  [{:keys [input-list input-cursor-index status-string]}]
+  (str "... marking item '" (current-item-text {:input-list input-list
+                                               :input-cursor-index input-cursor-index})
+       "' as '" status-string "' ...")
+  )
+
 ;; TODO: refactor so that submit-single-comparison does 
 ;; not need to know about caller (ie. figure out a common 
 ;; protocol, such as in-out, prev-next, {:abort true}, etc.)
@@ -639,7 +655,9 @@ Q: What are the things that are handled by the list namespace, but not directly 
    (if (= answer-input :yes)
      ;; when the answer is yes, a newly created list is returned
      (u/print-and-return
-      {:input-string "... marking current item as 'ready' ..."
+      {:input-string (gen-marking-current-text {:input-list input-list
+                                                :input-cursor-index input-cursor-index
+                                                :status-string "ready to do"}) ;;"... marking current item as 'ready to do' ..." 
        :is-debug? false
        :return-item
        (set-nth-item-in-list-to-status
