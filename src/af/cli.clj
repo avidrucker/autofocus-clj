@@ -13,6 +13,7 @@
 ;; TODO: evaluate whether calc and utils should be merged or kept separate
 ;; Question: What is more effective, to create one map of `cli-texts`, or to
 ;;           use multiple explicitly named global vars
+;; TODO: implement the non-display of the menu during prioritization sessions
 
 
 (def DEBUG-MODE-ON 
@@ -42,24 +43,6 @@
 #_(def YNORQ-ANSWER "'y', 'n', or 'q'")
 
 ;; STRING GENERATION
-(defn- gen-choice-confirm-string [input]
-  (str "You selected choice #" input "."))
-
-;; TODO: refactor this function into a string generation function,
-;;       do not pass it as an argument, and remove usage by
-;;       cli-get-number-range-inclusive, instead passing the string
-;;       instead to be printed out, or printing out the message
-;;       external to the function
-;; TODO: write down why this is not a good idea: 'pass this to 
-;;       `cli-get-number-in-range-inclusive`'
-;; TODO: refactor cli functions to not directly call data items 
-;;       such as NEWLINE or CLI-FENCE, instead, write functions 
-;;       that move NEWLINE and CLI-FENCE to be sibling level 
-;;       functions under a shared parent function, for example 
-;;       `cli-choice-confirm`
-(defn- cli-choice-confirm [input]
-  (println (str (gen-choice-confirm-string input) d/NEWLINE d/CLI-FENCE)))
-
 (defn- gen-invalid-input-detected-msg [entered-input]
   (str "Invalid input '" entered-input "' entered."))
 
@@ -67,21 +50,12 @@
   (str "Please enter a digit between " lower " and " upper ","
        d/NEWLINE "and then press the ENTER key: "))
 
-;; TODO: refactor this function to take key-val map of
-;; {:invalid-input :invalid-confirm :re-prompt} where,
-;; instead of passing lower and upper, the prompt is
-;; generated externally and passed in
-;; TODO: split the message generation of 'invalid-input-detected'
-;;       from the generation of 'prompt-user-for-valid-input'
-;;       (i.e. split this function into two)  
 (defn- cli-print-invalid-range-input-message [entered-input lower upper]
   (print (str (gen-invalid-input-detected-msg entered-input)
               d/NEWLINE
               (gen-enter-number-in-range lower upper))))
 
 
-;; TODO: rename invalid-input-re-request arg key so that it is clear from its name that it is a function 
-;; TODO: refactor this function so that its contents know nothing about menus, choices, nor does it decide its own printout messages, instead, it takes in print out messages as functions and passes to them the appropriate arguments, for example `if-cli-choice-confirm-exists-then-print-with-input-arg`, and so on for `cli-input-confirm`, `cli-invalid-input-detected, etc.`
 (defn- cli-get-number-in-range-inclusive
   "Gets a number ranging from x to y (inclusive) from the user via
   keyboard input and stdin. Optionally takes a map from which to
@@ -286,6 +260,10 @@
   (str "Select by number from the above menu [1-" options-cnt "]: "))
 
 
+(defn- gen-doing-msg [input-item-text]
+  (str "You are currently taking action on '" input-item-text "'..."))
+
+
 ;; TODO: convert into pure func by taking in args, not global state
 (defn cli-do-menu-cycle
   "display the menu and get user's menu choice"
@@ -317,7 +295,7 @@
       
       ;;;; when user indicates they are CANCELLING add action, return list as-is
       (u/print-and-return
-       {:input-string cancel-confirm ;; TODO: confrim that this is being used 
+       {:input-string cancel-confirm ;; DONE: confirmed, this is being used 
         :is-debug? false
         :return-item input-list})
 
@@ -365,44 +343,41 @@
       :return-item input-list}))
 
 
-;; TODO: rename this function, and all instances of the 
-;;       word 'focus' to replace with `take-action`
-(defn cli-conduct-focus-action
+;; TODO: take any key inluding ENTER to end 'focus' mode, and take that input on the same line as the prompt, without creating a new line
+;; TODO: add a `CLI-FENCE` to just below the 'end-focus-mode' prompt to separate it from the question to the user on whether there is work remaining to be done
+(defn cli-conduct-take-action
   [{:keys [input-list]}]
-  (let [take-action-results
-        (l/conduct-take-action-on-list
-         {:input-list input-list})
+  (let [;; get the results of taking action on an item
+        take-action-results (l/conduct-take-action-on-list
+                             {:input-list input-list})
 
-        {:keys
-         [result result-with-work-remaining priority-item]}
+        ;; destructure those results into easy-to-work-with key params
+        {:keys [result result-with-work-remaining priority-item]}
         take-action-results
 
-        priority-item-text
-        (get priority-item :text)]
+        priority-item-text (get priority-item :text)]
 
     (cli-clear-buffer)
 
-    (println d/CLI-FENCE)
-    
-    ;; TODO: replace the following line with a string generation function
-    (println (str "You are currently taking action on '" priority-item-text "'..."))
+    (println (str d/CLI-FENCE d/NEWLINE (gen-doing-msg priority-item-text)))
     (cli-press-enter-key-to-continue
      {:prompt d/ENTER-TO-CONTINUE})
-      ;; TODO: Ask the user here if there is any remaining work left (yes/no question):
-      ;;       - If yes, on top of marking the priority item as done, duplicate the 
-    ;;       priority item and append it to the list.
-
+    
+    ;; Ask the user here if there is any remaining work left (yes/no question):
+    ;; - If yes, on top of marking the priority item as done, duplicate the 
+    ;;   priority item and append it to the list.
     (let [work-remaining
           (= :yes
              (convert-answer-letter-to-keyword
               (cli-ask-question-with-limited-answer-set
                {:input-question (str "Is there work remaining to be done on '"
-                                     priority-item-text "'? (answer Y for yes, N for no): ")
-                :valid-answers valid-yn-answer-choices
+                                     priority-item-text "'? (answer Y for yes, N for no):")
+                :valid-answers Y-OR-NO-ANSWER-CHOICES
                 :invalid-input-response
                 "Please type Y or N to answer 'yes' or 'no', and then hit the ENTER key."})))]
       (if work-remaining
         (u/print-and-return
+         ;; TODO: replace usage of the word 'priority item' below with the text of the item itself, such as "Duplicating item 'a'", and "... marking item 'a' as 'done' ..."
          {:input-string (str "Duplicating priority item...\n"
                              "Marking the priority item as done...")
           :is-debug? false
@@ -430,7 +405,7 @@
                    {:input-list input-list})
 
     ;; TODO: implement the 'press any key' rather than just ENTER to continue
-    d/DO          (cli-conduct-focus-action {:input-list input-list})
+    d/DO          (cli-conduct-take-action {:input-list input-list})
 
     d/ABOUT       (print-text-section-and-return-to-menu 
                    {:input-list input-list
