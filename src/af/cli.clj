@@ -145,8 +145,8 @@
    to make a selection from a list/set of menu choice options."
   [{:keys [input-question valid-answers invalid-input-response]}]
   (loop []
-    (let [_     (println input-question)
-          input (read-line)
+    (let [_     (print (str input-question " "))
+          input (do (flush) (read-line))
           sanitized (s/trim input)]
       (if (contains? valid-answers sanitized)
         (u/print-and-return
