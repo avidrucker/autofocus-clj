@@ -227,11 +227,8 @@
   Used to enable the user to read text screens, as well as to wait
   for the user to indicate that they are done working on a task."
   [{:keys [prompt]}]
-  ;; TODO: refactor this to not use `let` if it is not needed
-  (let [_ (println prompt)
-        _ (read-line)])
-  ;; TODO: replace this string with a map arg input 'successful-continue-msg'
-  (when DEBUG-MODE-ON (println "Proceeding...")))
+  (println prompt)
+  (read-line))
 
 
 (defn- cli-take-keyboard-input
