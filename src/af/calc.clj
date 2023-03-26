@@ -75,8 +75,8 @@
   (sort-by #(find-thing % input-order) input-unsorted))
 
 
-;; TODO: replace the old `get-valid-menu-options` function
-;;       with the new `calc-valid-menu-options` function
+;;;; TODO: refactor to replace old `get-valid-menu-options` function
+;;;;       with new `calc-valid-menu-options` function
 ;; DONE: create a threading macro function which
 ;;       appends valid menu choices onto the base menu 
 (defn calc-valid-menu-options
@@ -85,8 +85,8 @@
                            (conj (when prioritizable? d/PRIORITIZE))
                            (conj (when actionable? d/DO)))
         combined-menu (cs/union (set input-base-menu) menu-additions)
-        _             (println ["menu additions" menu-additions
-                                "combined menu" combined-menu])
+        ;;_             (println ["menu additions" menu-additions
+        ;;                        "combined menu" combined-menu])
         sorted-final-menu (sort-menu-options
                            {:input-unsorted combined-menu
                             :input-order d/all-menu-options-sorted})]
@@ -136,6 +136,4 @@
   (sort-menu-options {:input-unsorted menu-opts-b
                       :input-order d/all-menu-options-sorted})
 )  
-
-
 
