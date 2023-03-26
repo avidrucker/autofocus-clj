@@ -35,6 +35,8 @@
 (def INVALID-YNQ-INPUT-RESPONSE
   "That wasn't a 'y', 'n', or 'q' answer. Please try again.")
 
+(def TYPE-YNQ-IN-REVIEW-MSG "Type Y for yes, N for no, or Q to quit reviewing the list:")
+
 #_(def Y-OR-N-ANSWER "'y' or 'n'")
 
 #_(def YNORQ-ANSWER "'y', 'n', or 'q'")
@@ -109,13 +111,12 @@
 ;; TODO: instead of matching on valid letters, you could match on valid keys
 ;;       Q: For this application, what would be more effective, to validate 
 ;;          on strings, on keys, or neither?
-;; TODO: rename to valid-ternary-choices
-(def valid-ynq-answer-choices
+(def YNQ-ANSWER-CHOICES
   #{"y" "Y" "q" "Q" "n" "N"
     "yes" "YES" "no" "NO" "quit" "QUIT"})
 
 ;; TODO: rename to valid-binary-choices
-(def valid-yn-answer-choices
+(def Y-OR-NO-ANSWER-CHOICES
   #{"y" "Y" "n" "N" "yes" "YES" "no" "NO"})
 
 (defn- convert-answer-letter-to-keyword
@@ -173,26 +174,24 @@
     - the new list (modified if user's answer was `:yes`, otherwise unmodified)
     - the next cursor (which may be `nil` if there are no more suitable `:new` items left prioritize)
     - the user's intent to continue (`true` for `:yes` and `:no` answers, `false` if the user's answer was `:quit`) ;; `intent-to-continue`"
-  [{:keys [input-list input-cursor-index]}]
-  ;; (when DEBUG-MODE-ON (println d/REVIEW-START)) ;; println debugging 
+  [{:keys [input-list]}]
   (loop [current-list input-list
-         current-index input-cursor-index ;; TODO: replace call to l/get-first-index... in cli ns with call to same function here instead, and remove calls to it, as it appears to be extraneous
-         ]
+         current-index (l/get-index-of-first-new-item-after-priority-item
+                        {:input-list current-list})]
     (let [;; generate the question to ask the user
           current-question (l/get-single-comparison
                             {:input-list current-list
                              :input-cursor-index current-index})
 
           full-prompt
-          (str current-question
-               " Type Y for yes, N for no, or Q to quit reviewing the list.")
+          (str current-question " " TYPE-YNQ-IN-REVIEW-MSG)
           
           ;; get the user's answer to the comparison question
           current-answer
           (convert-answer-letter-to-keyword
            (cli-ask-question-with-limited-answer-set
             {:input-question full-prompt
-             :valid-answers valid-ynq-answer-choices
+             :valid-answers YNQ-ANSWER-CHOICES
              :invalid-input-response INVALID-YNQ-INPUT-RESPONSE}))
 
           ;; get the result of submitting a comparison with user's answer 
@@ -431,10 +430,7 @@
     ;; TODO: Answer Q: What are the benefits of exposing list ns internals here?
     ;; TODO: If answer to above is none, remove reference to l/get-index-of-first...
     d/PRIORITIZE  (cli-conduct-prioritization-review
-                   {:input-list input-list
-                    :input-cursor-index
-                    (l/get-index-of-first-new-item-after-priority-item
-                     {:input-list input-list})})
+                   {:input-list input-list})
 
     ;; TODO: implement the 'press any key' rather than just ENTER to continue
     d/DO          (cli-conduct-focus-action {:input-list input-list})
