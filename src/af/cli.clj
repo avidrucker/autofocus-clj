@@ -95,7 +95,7 @@
             sanitized (s/trim input)]
         (if (and (some? sanitized) (re-matches match-str sanitized))
           (do
-            (cli-choice-confirm sanitized)
+            ;; (cli-choice-confirm sanitized) ;; tell the user what they have entered in a full sentence
             ;; TODO: refactor so that way this can run as a ClojureScript web app
             (Integer/parseInt sanitized))
           (do
