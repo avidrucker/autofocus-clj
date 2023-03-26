@@ -473,9 +473,7 @@
           _        (cli-clear-buffer)
 
           _        (when (zero? t-time)
-                     ;; TODO: relocate this string to the af.data namespace
-                     (println d/WELCOME-MESSAGE 
-                              ))
+                     (println d/WELCOME-MESSAGE))
 
           current-list (get app-state-map :the-list)
 
